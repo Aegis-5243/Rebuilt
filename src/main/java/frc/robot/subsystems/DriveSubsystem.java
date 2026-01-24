@@ -9,9 +9,17 @@ import com.playingwithfusion.CANVenom.BrakeCoastMode;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
+import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.shuffleboard.LayoutType;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 
 public class DriveSubsystem extends SubsystemBase {
@@ -21,9 +29,16 @@ public class DriveSubsystem extends SubsystemBase {
   public CANVenom blMotor;
   public CANVenom brMotor;
 
+  public Encoder flEncoder;
+  public Encoder frEncoder;
+  public Encoder blEncoder;
+  public Encoder brEncoder;
+
   public MecanumDrive drive;
 
   public AHRS gyro;
+
+  public SysIdRoutine sysId;
 
   /** Creates a new ExampleSubsystem. */
   public DriveSubsystem() {
@@ -43,17 +58,90 @@ public class DriveSubsystem extends SubsystemBase {
     blMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
     brMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
 
-    drive = new MecanumDrive(frMotor, flMotor, brMotor, blMotor);
+    flEncoder = new Encoder(Constants.FL_ENCODER[0], Constants.FL_ENCODER[1], true);
+    frEncoder = new Encoder(Constants.FR_ENCODER[0], Constants.FR_ENCODER[1], false);
+    blEncoder = new Encoder(Constants.BL_ENCODER[0], Constants.BL_ENCODER[1], true);
+    brEncoder = new Encoder(Constants.BR_ENCODER[0], Constants.BR_ENCODER[1], false);
+
+    double dist = Math.PI * Constants.WHEEL_DIAMETER.in(Units.Meters) / Constants.ENCODER_CYCLES_PER_REV;
+    flEncoder.setDistancePerPulse(dist);
+    frEncoder.setDistancePerPulse(dist);
+    blEncoder.setDistancePerPulse(dist);
+    brEncoder.setDistancePerPulse(dist);
+
+    drive = new MecanumDrive(flMotor, blMotor, frMotor, brMotor);
 
     gyro = new AHRS(NavXComType.kMXP_SPI);
+    gyro.reset();
+
+    ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
+    tab.addDouble("gyroYaw", gyro::getYaw);
+    tab.add("flMotor", flMotor);
+    tab.add("frMotor", frMotor);
+    tab.add("blMotor", blMotor); 
+    tab.add("brMotor", brMotor);
+    // ShuffleboardLayout encoderLayout = 
+    // tab.getLayout("encoders", "kList");
+    
+    tab.add("flEncoder", flEncoder);
+    tab.add("frEncoder", frEncoder);
+    tab.add("blEncoder", blEncoder);
+    tab.add("brEncoder", brEncoder);
+
+    // this.sysId = new SysIdRoutine(new SysIdRoutine.Config(), new
+    // SysIdRoutine.Mechanism(
+    // voltage -> {
+    // flMotor.setVoltage(voltage.magnitude());
+    // frMotor.setVoltage(voltage.magnitude());
+    // blMotor.setVoltage(voltage.magnitude());
+    // brMotor.setVoltage(voltage.magnitude());
+    // System.out.println("setting: " + voltage.magnitude() + "; getteing " +
+    // flMotor.getOutputVoltage());
+    // },
+    // log -> {
+    // log.motor("drive-front-right")
+    // .voltage(Units.Volts.of(frMotor.getBusVoltage()))
+    // .linearPosition(frEncoder.get())
+    // .linearVelocity(frEncoder.getLinearVelocity());
+
+    // log.motor("drive-front-left")
+    // .voltage(Units.Volts.of(flMotor.getBusVoltage()))
+    // .linearPosition(flEncoder.get())
+    // .linearVelocity(flEncoder.getLinearVelocity());
+
+    // log.motor("drive-back-left")
+    // .voltage(Units.Volts.of(blMotor.getBusVoltage()))
+    // .linearPosition(blEncoder.get())
+    // .linearVelocity(blEncoder.getLinearVelocity());
+
+    // log.motor("drive-back-right")
+    // .voltage(Units.Volts.of(brMotor.getBusVoltage()))
+    // .linearPosition(brEncoder.get())
+    // .linearVelocity(brEncoder.getLinearVelocity());
+    // },
+    // this));
   }
 
   public void drive() {
-    drive.driveCartesian(Constants.controller.getLeftY(), -Constants.controller.getLeftX(), Constants.controller.getRightX());
+
+    double leftY = Constants.controller.getLeftY();
+    double leftX = -Constants.controller.getLeftX();
+    double rightX = -Constants.controller.getRightX();
+
+    leftY = Math.signum(leftY) * leftY * leftY;
+    leftX = Math.signum(leftX) * leftX * leftX;
+    rightX = Math.signum(rightX) * rightX * rightX;
+
+    leftY *= 0.75;
+    leftX *= 0.75;
+    rightX *= 0.75;
+
+    drive.driveCartesian(leftY, leftX, rightX);
   }
 
   @Override
   public void periodic() {
+    // System.out.println(gyro.getYaw());
     // This method will be called once per scheduler run
   }
 

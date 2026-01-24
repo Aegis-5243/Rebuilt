@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.XboxController;
 
 /**
@@ -19,6 +21,15 @@ public final class Constants {
   public static final int FR_MOTOR = 14;
   public static final int BL_MOTOR = 11;
   public static final int BR_MOTOR = 12;
+
+  public static final int[] FL_ENCODER = {2, 3};
+  public static final int[] FR_ENCODER = {6, 7};
+  public static final int[] BL_ENCODER = {0, 1};
+  public static final int[] BR_ENCODER = {4, 5};
+
+  public static final int ENCODER_CYCLES_PER_REV = 2048;
+
+  public static final Distance WHEEL_DIAMETER = Units.Inches.of(6);
 
   public static XboxController controller = new XboxController(0);
 
