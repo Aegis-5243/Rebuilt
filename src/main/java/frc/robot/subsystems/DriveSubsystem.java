@@ -198,18 +198,20 @@ public class DriveSubsystem extends SubsystemBase {
     return speed;
   }
 
-  /** @param xSpeed meters per second (+ forward)
-   * @param ySpeed meters per second (+ left)
+  /**
+   * @param xSpeed    meters per second (+ forward)
+   * @param ySpeed    meters per second (+ left)
    * @param zRotation i don't know what unit this is (: (+ counterclockwise)
-  */
+   */
   public void driveRobotCentric(double xSpeed, double ySpeed, double zRotation) {
     drive.driveCartesian(-xSpeed, ySpeed, zRotation);
   }
 
-  /** @param xSpeed meters per second (+ forward)
-   * @param ySpeed meters per second (+ left)
+  /**
+   * @param xSpeed    meters per second (+ forward)
+   * @param ySpeed    meters per second (+ left)
    * @param zRotation i don't know what unit this is (: (+ counterclockwise)
-  */
+   */
   public void driveFieldCentric(double xSpeed, double ySpeed, double zRotation) {
     // double rot = getPose().getRotation;
     Translation2d t = new Translation2d(xSpeed, ySpeed).rotateBy(getPose().getRotation().times(-1));
@@ -220,8 +222,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   public Command driveFieldCentricCommand(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier zRotation) {
     return run(
-      () -> driveFieldCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble())
-    );
+        () -> driveFieldCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble()));
   }
 
   public void controllerDriveFieldCentric() {
@@ -244,14 +245,15 @@ public class DriveSubsystem extends SubsystemBase {
 
   public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric);
 
-  // public void driveRobotCentric(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier zRotation) {
-  //   drive.driveCartesian(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble());
+  // public void driveRobotCentric(DoubleSupplier xSpeed, DoubleSupplier ySpeed,
+  // DoubleSupplier zRotation) {
+  // drive.driveCartesian(xSpeed.getAsDouble(), ySpeed.getAsDouble(),
+  // zRotation.getAsDouble());
   // }
 
   public Command driveRobotCentricCommand(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier zRotation) {
     return run(
-      () -> driveRobotCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble())
-    );
+        () -> driveRobotCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble()));
   }
 
   public void controllerDriveRobotCentric() {
@@ -303,6 +305,10 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     // This method will be called once per scheduler run during simulation
+  }
+
+  public void stop() {
+    drive.driveCartesian(0, 0, 0);
   }
 
 }
