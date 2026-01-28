@@ -33,8 +33,18 @@ public final class Constants {
 
     public static final int ENCODER_CYCLES_PER_REV = 2048;
 
+    public static final double DRIVE_GEARBOX_RATIO = 9.13;
+
     public static final Distance WHEEL_DIAMETER = Units.Inches.of(6);
+    /*** meters per revolution */
+    public static final double WHEEL_DISTANCE_PER_MOTOR_REV = Math.PI * WHEEL_DIAMETER.in(Units.Meters) / DRIVE_GEARBOX_RATIO;
+    /*** meters per encoder pulse */
     public static final double WHEEL_DISTANCE_PER_PULSE = Math.PI * Constants.WHEEL_DIAMETER.in(Units.Meters) / Constants.ENCODER_CYCLES_PER_REV;
+
+    /*** Meters per second */
+    public static final double DRIVE_MAX_SPEED = 2.0;
+    /*** Meters per second squared */
+    public static final double DRIVE_MAX_ACCELERATION = 10.0;
 
     public static XboxController controller = new XboxController(0);
 

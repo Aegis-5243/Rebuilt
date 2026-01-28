@@ -5,10 +5,10 @@
 package frc.robot;
 
 import frc.robot.commands.Autos;
-import frc.robot.commands.DriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -25,14 +25,13 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
  */
 public class RobotContainer {
     // The robot's subsystems and commands are defined here...
-    private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
-    private final DriveCommand m_driveCommand = new DriveCommand(m_driveSubsystem);
+    private final DriveSubsystem driveSubsystem = new DriveSubsystem();
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
     public RobotContainer() {
-        m_driveSubsystem.setDefaultCommand(m_driveCommand);
+        driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
 
         // Configure the trigger bindings
         configureBindings();
@@ -54,10 +53,20 @@ public class RobotContainer {
      */
     private void configureBindings() {
         // temp binds for drivetrain characterization
-        new JoystickButton(Constants.controller, XboxController.Button.kA.value).whileTrue(m_driveSubsystem.sysId.quasistatic(Direction.kForward));
-        new JoystickButton(Constants.controller, XboxController.Button.kB.value).whileTrue(m_driveSubsystem.sysId.quasistatic(Direction.kReverse));
-        new JoystickButton(Constants.controller, XboxController.Button.kX.value).whileTrue(m_driveSubsystem.sysId.dynamic(Direction.kForward));
-        new JoystickButton(Constants.controller, XboxController.Button.kY.value).whileTrue(m_driveSubsystem.sysId.dynamic(Direction.kReverse));
+        // new JoystickButton(Constants.controller,
+        // XboxController.Button.kA.value).whileTrue(driveSubsystem.sysId.quasistatic(Direction.kForward));
+        // new JoystickButton(Constants.controller,
+        // XboxController.Button.kB.value).whileTrue(driveSubsystem.sysId.quasistatic(Direction.kReverse));
+        // new JoystickButton(Constants.controller,
+        // XboxController.Button.kX.value).whileTrue(driveSubsystem.sysId.dynamic(Direction.kForward));
+        // new JoystickButton(Constants.controller,
+        // XboxController.Button.kY.value).whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
+
+        new Trigger(() -> Constants.controller.getLeftStickButton())
+                .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+
+        new JoystickButton(Constants.controller, XboxController.Button.kBack.value)
+                .onTrue(Commands.runOnce(driveSubsystem::resetPos));
     }
 
     /**
@@ -67,6 +76,8 @@ public class RobotContainer {
      */
     public Command getAutonomousCommand() {
         // An example command will be run in autonomous
-        return Autos.exampleAuto(m_driveSubsystem);
+        return driveSubsystem.driveRobotCentricCommand(() -> 1.0, () -> 0.0, () -> 0.0)
+                .withDeadline(Commands.waitSeconds(1));
+        // return Autos.exampleAuto(m_driveSubsystem);
     }
 }
