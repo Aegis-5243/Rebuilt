@@ -6,7 +6,7 @@ package frc.robot;
 
 import frc.robot.commands.Autos;
 import frc.robot.drive.AlignToPose;
-import frc.robot.drive.AlignToPoseAccelerative;
+import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -66,20 +66,21 @@ public class RobotContainer {
         // new JoystickButton(Constants.controller,
         // XboxController.Button.kY.value).whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
 
+        // Drive field centric
         new Trigger(() -> Constants.controller.getLeftStickButton())
                 .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+
+        // Drive field centric facing origin
+        new Trigger(() -> Constants.controller.getRightStickButton())
+                .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() -> 0, () -> 0));
 
         // Reset pose to origin
         new JoystickButton(Constants.controller, XboxController.Button.kBack.value)
                 .onTrue(Commands.runOnce(driveSubsystem::resetPos));
 
-        // Align to origin pose
-        new JoystickButton(Constants.controller, XboxController.Button.kA.value)
-                .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0, Rotation2d.kZero)));
-
         // Align to origin pose with deceleration
         new JoystickButton(Constants.controller, XboxController.Button.kB.value)
-                .whileTrue(new AlignToPoseAccelerative(driveSubsystem, new Pose2d(0, 0, Rotation2d.kZero)));
+                .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0, Rotation2d.kZero)));
     }
 
     /**
