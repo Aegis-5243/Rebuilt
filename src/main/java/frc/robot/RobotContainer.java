@@ -4,8 +4,12 @@
 
 package frc.robot;
 
+import frc.robot.commands.AlignToPose;
+import frc.robot.commands.AlignToPoseAccelerative;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.DriveSubsystem;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -65,8 +69,17 @@ public class RobotContainer {
         new Trigger(() -> Constants.controller.getLeftStickButton())
                 .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
 
+        // Reset pose to origin
         new JoystickButton(Constants.controller, XboxController.Button.kBack.value)
                 .onTrue(Commands.runOnce(driveSubsystem::resetPos));
+
+        // Align to origin pose
+        new JoystickButton(Constants.controller, XboxController.Button.kA.value)
+                .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0, Rotation2d.kZero)));
+
+        // Align to origin pose with deceleration
+        new JoystickButton(Constants.controller, XboxController.Button.kB.value)
+                .whileTrue(new AlignToPoseAccelerative(driveSubsystem, new Pose2d(0, 0, Rotation2d.kZero)));
     }
 
     /**
