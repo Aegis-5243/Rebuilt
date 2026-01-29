@@ -74,6 +74,10 @@ public class RobotContainer {
         new Trigger(() -> Constants.controller.getRightStickButton())
                 .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() -> 0, () -> 0));
 
+        // Drive field centric snapping
+        new Trigger(() -> Constants.controller.getRightBumperButton())
+                .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
+
         // Reset pose to origin
         new JoystickButton(Constants.controller, XboxController.Button.kBack.value)
                 .onTrue(Commands.runOnce(driveSubsystem::resetPos));

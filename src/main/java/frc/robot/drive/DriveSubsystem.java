@@ -59,6 +59,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
 
+  private Rotation2d snapDirection = Rotation2d.kZero;
+
   /** Creates a new ExampleSubsystem. */
   public DriveSubsystem() {
     ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
@@ -252,7 +254,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric);
 
-  public void controllerDriveFieldCentricFacingPose(double x, double y) {
+  public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
     double leftY = -Constants.controller.getLeftY();
     double leftX = -Constants.controller.getLeftX();
 
@@ -266,22 +268,42 @@ public class DriveSubsystem extends SubsystemBase {
 
     double rotSpeed = 0;
 
-    Translation2d trans = new Translation2d(x, y)
-        .minus(getPose().getTranslation());
-    if (trans.getNorm() > 0.1) { // Don't auto rotate when less than 10cm away from target
-      double angle = trans.getAngle().getDegrees();
+    double angle = dir.getDegrees();
 
-      rotController.setSetpoint(angle);
-      rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
+    rotController.setSetpoint(angle);
+    rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
 
-      rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
-    }
+    rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
+    // }
 
     driveFieldCentric(leftY, leftX, rotSpeed);
   }
 
+  public void controllerDriveFieldCentricFacingPose(double x, double y) {
+    Rotation2d dir = getPose().getRotation();
+
+    Translation2d trans = new Translation2d(x, y)
+        .minus(getPose().getTranslation());
+    if (trans.getNorm() > 0.1) {
+      dir = trans.getAngle();
+    } // Don't auto rotate when less than 10cm away from target
+
+    controllerDriveFieldCentricFacingDir(dir);
+  }
+
   public Command controllerDriveFieldCentricFacingPoseCommand(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
     return run(() -> controllerDriveFieldCentricFacingPose(xSupplier.getAsDouble(), ySupplier.getAsDouble()));
+  }
+
+  public Command controllerDriveFieldCentricSnapCommand() {
+    return startRun(() -> {
+      double snapDir = 90.0;
+      double angle = getPose().getRotation().getDegrees();
+      angle = Math.round(angle / snapDir) * snapDir;
+      snapDirection = Rotation2d.fromDegrees(angle);
+    }, () -> {
+      controllerDriveFieldCentricFacingDir(snapDirection);
+    });
   }
 
   // public void driveRobotCentric(DoubleSupplier xSpeed, DoubleSupplier ySpeed,
