@@ -71,7 +71,7 @@ public class AlignToPoseAccelerative extends Command {
         double deceleration = Constants.DRIVE_MAX_ACCELERATION*0.5;
 
         double maxSpeed = Math.sqrt(2 * deceleration * dist); // add a small constant to prevent stalling
-        maxSpeed = MathUtil.clamp(maxSpeed, 0.2, maxSpeed);
+        maxSpeed = MathUtil.clamp(maxSpeed, 0.2, Constants.DRIVE_MAX_SPEED);
 
         SmartDashboard.putNumber("align_rawXSpeed", xSpeed);
         SmartDashboard.putNumber("align_rawYSpeed", ySpeed);
