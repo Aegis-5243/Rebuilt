@@ -4,10 +4,10 @@
 
 package frc.robot;
 
-import frc.robot.commands.AlignToPose;
-import frc.robot.commands.AlignToPoseAccelerative;
 import frc.robot.commands.Autos;
-import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.drive.AlignToPose;
+import frc.robot.drive.AlignToPoseAccelerative;
+import frc.robot.drive.DriveSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.XboxController;

@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.drive;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -8,7 +8,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
-import frc.robot.subsystems.DriveSubsystem;
 
 public class AlignToPose extends Command {
     public Pose2d targetPose;

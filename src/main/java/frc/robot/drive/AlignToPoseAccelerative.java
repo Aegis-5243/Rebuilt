@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.drive;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
-import frc.robot.subsystems.DriveSubsystem;
 
 public class AlignToPoseAccelerative extends Command {
     public Pose2d targetPose;
@@ -23,8 +22,8 @@ public class AlignToPoseAccelerative extends Command {
     public AlignToPoseAccelerative(DriveSubsystem driveSubsystem, Pose2d targetPose) {
         this.driveSubsystem = driveSubsystem;
         this.targetPose = targetPose;
-        xController = new PIDController(0.1, 0.0, 0.0);
-        yController = new PIDController(0.1, 0.0, 0.0);
+        xController = new PIDController(2, 0.0, 0.0);
+        yController = new PIDController(2, 0.0, 0.0);
         rotController = new PIDController(0.1, 0.0, 0.0);
         rotController.enableContinuousInput(-180.0, 180.0);
 
