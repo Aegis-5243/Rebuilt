@@ -46,6 +46,23 @@ public final class Constants {
     /*** Meters per second squared */
     public static final double DRIVE_MAX_ACCELERATION = 10.0;
 
+
+    public static final int TURRET_MOTOR = 21;
+    /*** Degrees per revolution */
+    public static final double TURRET_DEGREES_PER_REV = 24.0 / 5.0 * 360;
+
+
+    public static final int PRIMARY_SHOOTER = 31;
+    public static final int SECONDARY_SHOOTER = 32;
+
+    public static final double SHOOTER_kP = 0;
+    public static final double SHOOTER_kI = 0;
+    public static final double SHOOTER_kD = 0;
+    
+    public static final double SHOOTER_kA = 0;
+    public static final double SHOOTER_kS = 0;
+    public static final double SHOOTER_kV = 0;
+
     public static XboxController controller = new XboxController(0);
 
     public static class OperatorConstants {
