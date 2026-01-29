@@ -14,9 +14,11 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
@@ -54,6 +56,10 @@ public class DriveSubsystem extends SubsystemBase {
   public SysIdRoutine sysId;
 
   public Field2d field;
+
+  private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
+
+  private Rotation2d snapDirection = Rotation2d.kZero;
 
   /** Creates a new ExampleSubsystem. */
   public DriveSubsystem() {
@@ -121,7 +127,8 @@ public class DriveSubsystem extends SubsystemBase {
     drive = new CustomMecanumDrive(
         v -> {
           // System.out.println(v * metersPerSecondToRPM + " | " + flMotor.getSpeed());
-          System.out.println(v + " | " + v * metersPerSecondToRPM + " | " + flMotor.getSpeed());
+          // System.out.println(v + " | " + v * metersPerSecondToRPM + " | " +
+          // flMotor.getSpeed());
           flMotor.setCommand(controlMode, v * metersPerSecondToRPM);
         },
         v -> blMotor.setCommand(controlMode, v * metersPerSecondToRPM),
@@ -189,6 +196,8 @@ public class DriveSubsystem extends SubsystemBase {
 
     field = new Field2d();
     tab.add("Field", field);
+
+    rotController.enableContinuousInput(-180, 180);
   }
 
   public double getMaxSpeed() {
@@ -244,6 +253,58 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric);
+
+  public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
+    double leftY = -Constants.controller.getLeftY();
+    double leftX = -Constants.controller.getLeftX();
+
+    leftY = Math.signum(leftY) * leftY * leftY;
+    leftX = Math.signum(leftX) * leftX * leftX;
+
+    double speed = getMaxSpeed();
+
+    leftY *= speed;
+    leftX *= speed;
+
+    double rotSpeed = 0;
+
+    double angle = dir.getDegrees();
+
+    rotController.setSetpoint(angle);
+    rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
+
+    rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
+    // }
+
+    driveFieldCentric(leftY, leftX, rotSpeed);
+  }
+
+  public void controllerDriveFieldCentricFacingPose(double x, double y) {
+    Rotation2d dir = getPose().getRotation();
+
+    Translation2d trans = new Translation2d(x, y)
+        .minus(getPose().getTranslation());
+    if (trans.getNorm() > 0.1) {
+      dir = trans.getAngle();
+    } // Don't auto rotate when less than 10cm away from target
+
+    controllerDriveFieldCentricFacingDir(dir);
+  }
+
+  public Command controllerDriveFieldCentricFacingPoseCommand(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return run(() -> controllerDriveFieldCentricFacingPose(xSupplier.getAsDouble(), ySupplier.getAsDouble()));
+  }
+
+  public Command controllerDriveFieldCentricSnapCommand() {
+    return startRun(() -> {
+      double snapDir = 90.0;
+      double angle = getPose().getRotation().getDegrees();
+      angle = Math.round(angle / snapDir) * snapDir;
+      snapDirection = Rotation2d.fromDegrees(angle);
+    }, () -> {
+      controllerDriveFieldCentricFacingDir(snapDirection);
+    });
+  }
 
   // public void driveRobotCentric(DoubleSupplier xSpeed, DoubleSupplier ySpeed,
   // DoubleSupplier zRotation) {
