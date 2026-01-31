@@ -8,6 +8,7 @@ import frc.robot.commands.Autos;
 import frc.robot.drive.AlignToPose;
 import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
+import frc.robot.shooter.HoodSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.XboxController;
@@ -30,13 +31,13 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 public class RobotContainer {
     // The robot's subsystems and commands are defined here...
     private final DriveSubsystem driveSubsystem = new DriveSubsystem();
+    private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
     public RobotContainer() {
         driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
-
         // Configure the trigger bindings
         configureBindings();
     }

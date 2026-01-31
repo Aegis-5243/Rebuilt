@@ -125,12 +125,7 @@ public class DriveSubsystem extends SubsystemBase {
     /*** m/s to rpm */
     double metersPerSecondToRPM = 60 / Constants.WHEEL_DISTANCE_PER_MOTOR_REV;
     drive = new CustomMecanumDrive(
-        v -> {
-          // System.out.println(v * metersPerSecondToRPM + " | " + flMotor.getSpeed());
-          // System.out.println(v + " | " + v * metersPerSecondToRPM + " | " +
-          // flMotor.getSpeed());
-          flMotor.setCommand(controlMode, v * metersPerSecondToRPM);
-        },
+        v -> flMotor.setCommand(controlMode, v * metersPerSecondToRPM),
         v -> blMotor.setCommand(controlMode, v * metersPerSecondToRPM),
         v -> frMotor.setCommand(controlMode, v * metersPerSecondToRPM),
         v -> brMotor.setCommand(controlMode, v * metersPerSecondToRPM));
