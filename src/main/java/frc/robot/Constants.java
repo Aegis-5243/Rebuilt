@@ -7,6 +7,8 @@ package frc.robot;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.controllers.DriveController;
+import frc.robot.controllers.ProController;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -63,7 +65,7 @@ public final class Constants {
     public static final double SHOOTER_kS = 0;
     public static final double SHOOTER_kV = 0;
 
-    public static XboxController controller = new XboxController(0);
+    public static DriveController controller = new ProController(0);
 
     public static class OperatorConstants {
         public static final int kDriverControllerPort = 0;

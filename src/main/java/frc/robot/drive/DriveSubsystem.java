@@ -197,7 +197,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   public double getMaxSpeed() {
     double speed = Constants.DRIVE_MAX_SPEED;
-    speed += 2 * MathUtil.clamp(2 * Constants.controller.getLeftTriggerAxis() - 1.0, 0.0, 1.0);
+    speed += 2 * Constants.controller.getDriveBoost();
 
     return speed;
   }
@@ -230,36 +230,36 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void controllerDriveFieldCentric() {
-    double leftY = -Constants.controller.getLeftY();
-    double leftX = -Constants.controller.getLeftX();
-    double rightX = -Constants.controller.getRightX();
+    double driveX = Constants.controller.getDriveX();
+    double driveY = -Constants.controller.getDriveY();
+    double driveTurn = -Constants.controller.getDriveTurn();
 
-    leftY = Math.signum(leftY) * leftY * leftY;
-    leftX = Math.signum(leftX) * leftX * leftX;
-    rightX = Math.signum(rightX) * rightX * rightX;
+    driveX = Math.signum(driveX) * driveX * driveX;
+    driveY = Math.signum(driveY) * driveY * driveY;
+    driveTurn = Math.signum(driveTurn) * driveTurn * driveTurn;
 
     double speed = getMaxSpeed();
 
-    leftY *= speed;
-    leftX *= speed;
-    rightX *= speed;
+    driveX *= speed;
+    driveY *= speed;
+    driveTurn *= speed;
 
-    driveFieldCentric(leftY, leftX, rightX);
+    driveFieldCentric(driveX, driveY, driveTurn);
   }
 
   public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric);
 
   public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
-    double leftY = -Constants.controller.getLeftY();
-    double leftX = -Constants.controller.getLeftX();
+    double driveX = Constants.controller.getDriveX();
+    double driveY = -Constants.controller.getDriveY();
 
-    leftY = Math.signum(leftY) * leftY * leftY;
-    leftX = Math.signum(leftX) * leftX * leftX;
+    driveX = Math.signum(driveX) * driveX * driveX;
+    driveY = Math.signum(driveY) * driveY * driveY;
 
     double speed = getMaxSpeed();
 
-    leftY *= speed;
-    leftX *= speed;
+    driveX *= speed;
+    driveY *= speed;
 
     double rotSpeed = 0;
 
@@ -271,7 +271,7 @@ public class DriveSubsystem extends SubsystemBase {
     rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
     // }
 
-    driveFieldCentric(leftY, leftX, rotSpeed);
+    driveFieldCentric(driveX, driveY, rotSpeed);
   }
 
   public void controllerDriveFieldCentricFacingPose(double x, double y) {
@@ -313,21 +313,21 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void controllerDriveRobotCentric() {
-    double leftY = -Constants.controller.getLeftY();
-    double leftX = -Constants.controller.getLeftX();
-    double rightX = -Constants.controller.getRightX();
+    double driveX = Constants.controller.getDriveX();
+    double driveY = -Constants.controller.getDriveY();
+    double driveTurn = -Constants.controller.getDriveTurn();
 
-    leftY = Math.signum(leftY) * leftY * leftY;
-    leftX = Math.signum(leftX) * leftX * leftX;
-    rightX = Math.signum(rightX) * rightX * rightX;
+    driveX = Math.signum(driveX) * driveX * driveX;
+    driveY = Math.signum(driveY) * driveY * driveY;
+    driveTurn = Math.signum(driveTurn) * driveTurn * driveTurn;
 
     double speed = getMaxSpeed();
 
-    leftY *= speed;
-    leftX *= speed;
-    rightX *= speed;
+    driveX *= speed;
+    driveY *= speed;
+    driveTurn *= speed;
 
-    driveRobotCentric(leftY, leftX, rightX);
+    driveRobotCentric(driveX, driveY, driveTurn);
   }
 
   public Command controllerDriveRobotCentricCommand = run(this::controllerDriveRobotCentric);
