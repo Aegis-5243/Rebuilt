@@ -2,12 +2,19 @@ package frc.robot.controllers;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 public class ProController implements DriveController {
     private XboxController controller;
 
     public ProController(int port) {
         controller = new XboxController(port);
+        ShuffleboardTab tab = Shuffleboard.getTab("Controller");
+
+        tab.addDouble("driveX", () -> getDriveX());
+        tab.addDouble("driveY", () -> getDriveY());
+        tab.addDouble("driveTurn", () -> getDriveTurn());
     }
     
     @Override
@@ -53,5 +60,10 @@ public class ProController implements DriveController {
     @Override
     public boolean getAlignToOriginPoseButton() {
         return controller.getBButton();
+    }
+
+    @Override
+    public boolean getShoot() {
+        return controller.getAButton();
     }
 }

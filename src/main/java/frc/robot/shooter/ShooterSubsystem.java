@@ -5,14 +5,17 @@
 package frc.robot.shooter;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
@@ -23,6 +26,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public VelocityVoltage velocityRequest;
     public VoltageOut voltageRequest;
+    public DutyCycleOut dutyCycleRequest;
+
+    GenericEntry kp;
+    GenericEntry kf;
 
     public SysIdRoutine sysId;
 
@@ -30,6 +37,11 @@ public class ShooterSubsystem extends SubsystemBase {
     public ShooterSubsystem() {
         primaryShooter = new TalonFX(Constants.PRIMARY_SHOOTER);
         secondaryShooter = new TalonFX(Constants.SECONDARY_SHOOTER);
+
+        Shuffleboard.getTab("pid").addDouble("rpm",
+                () -> Units.RotationsPerSecond.of(primaryShooter.getVelocity().getValueAsDouble()).in(Units.RPM));
+        Shuffleboard.getTab("pid").addDouble("rpm-sec",
+                () -> Units.RotationsPerSecond.of(secondaryShooter.getVelocity().getValueAsDouble()).in(Units.RPM));
 
         secondaryShooter.setControl(new Follower(Constants.PRIMARY_SHOOTER, MotorAlignmentValue.Opposed));
 
@@ -45,6 +57,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         velocityRequest = new VelocityVoltage(0).withSlot(0);
         voltageRequest = new VoltageOut(0);
+        dutyCycleRequest = new DutyCycleOut(0);
 
         this.sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(
                 voltage -> {
@@ -54,13 +67,19 @@ public class ShooterSubsystem extends SubsystemBase {
                     log.motor("shooter")
                             .voltage(Units.Volts.of(primaryShooter.getMotorVoltage().getValueAsDouble()))
                             .angularPosition(Units.Rotations.of(primaryShooter.getPosition().getValueAsDouble()))
-                            .angularVelocity(Units.RotationsPerSecond.of(primaryShooter.getVelocity().getValueAsDouble()));
+                            .angularVelocity(
+                                    Units.RotationsPerSecond.of(primaryShooter.getVelocity().getValueAsDouble()));
                 },
                 this));
     }
 
     public void setVelocity(AngularVelocity speed) {
-        primaryShooter.setControl(velocityRequest.withVelocity(speed));
+        primaryShooter.setControl(velocityRequest.withVelocity(speed).withFeedForward(Constants.SHOOTER_KF));
+        
+    }
+
+    public void setDutyCycle(double speed) {
+        primaryShooter.setControl(dutyCycleRequest.withOutput(speed));
     }
 
     @Override

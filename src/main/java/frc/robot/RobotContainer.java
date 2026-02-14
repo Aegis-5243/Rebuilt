@@ -7,12 +7,15 @@ package frc.robot;
 import frc.robot.commands.Autos;
 import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
-import frc.robot.shooter.HoodSubsystem;
+import frc.robot.shooter.ShooterSubsystem;
+// import frc.robot.shooter.HoodSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -30,13 +33,17 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 public class RobotContainer {
     // The robot's subsystems and commands are defined here...
     private final DriveSubsystem driveSubsystem = new DriveSubsystem();
-    private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
+    // private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
+    // private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
     public RobotContainer() {
         driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
+        // shooterSubsystem.setDefaultCommand(shooterSubsystem.run(() -> {
+        //     shooterSubsystem.setDutyCycle(0);
+        // }));
         // Configure the trigger bindings
         configureBindings();
     }
@@ -68,23 +75,38 @@ public class RobotContainer {
 
         // Drive field centric
         new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+        .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
 
         // Drive field centric facing origin
-        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingOriginMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() -> 0, () -> 0));
+        new Trigger(() ->
+        Constants.controller.getDriveFieldCentricFacingOriginMode())
+        .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() ->
+        0, () -> 0));
 
         // Drive field centric snapping
         new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
+        .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
 
         // Reset pose to origin
         new Trigger(() -> Constants.controller.getResetPoseButton())
-                .onTrue(Commands.runOnce(driveSubsystem::resetPos));
+        .onTrue(Commands.runOnce(driveSubsystem::resetPos));
 
         // Align to origin pose with deceleration
         new Trigger(() -> Constants.controller.getAlignToOriginPoseButton())
-                .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0, Rotation2d.kZero)));
+        .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0,
+        Rotation2d.kZero)));
+
+        // new Trigger(() -> Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
+        //     shooterSubsystem.setDutyCycle(.75);
+        
+        //     System.out.println("duty cycle");
+        // }, () -> shooterSubsystem.setDutyCycle(0)));
+        
+        // new Trigger(() -> Constants.controller.getAlignToOriginPoseButton()).whileTrue(shooterSubsystem.runEnd(() -> {
+        //     shooterSubsystem.setVelocity(Units.RPM.of(6000));
+        
+        //     System.out.println("rpm");
+        // }, () -> shooterSubsystem.setDutyCycle(0)));
     }
 
     /**
@@ -94,8 +116,10 @@ public class RobotContainer {
      */
     public Command getAutonomousCommand() {
         // An example command will be run in autonomous
-        return driveSubsystem.driveRobotCentricCommand(() -> 1.0, () -> 0.0, () -> 0.0)
-                .withDeadline(Commands.waitSeconds(1));
+        // return driveSubsystem.driveRobotCentricCommand(() -> 1.0, () -> 0.0, () ->
+        // 0.0)
+        // .withDeadline(Commands.waitSeconds(1));
+        return new InstantCommand();
         // return Autos.exampleAuto(m_driveSubsystem);
     }
 }

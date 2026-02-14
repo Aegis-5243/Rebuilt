@@ -80,7 +80,7 @@ public class DriveSubsystem extends SubsystemBase {
     blMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
     brMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
 
-    double p = 0.195, i = 0.01, d = 0.0, f = 0.184, b = 0.0;
+    double p = 0.195, i = 0.0, d = 0.0, f = 0.184, b = 0.0;
 
     flMotor.setPID(p, i, d, f, b);
     frMotor.setPID(p, i, d, f, b);
@@ -177,6 +177,12 @@ public class DriveSubsystem extends SubsystemBase {
     tab.add("frMotor", frMotor);
     tab.add("blMotor", blMotor);
     tab.add("brMotor", brMotor);
+
+    tab.add(drive);
+    tab.addDouble("flMotorTarget", () -> flMotor.getPIDTarget());
+    tab.addDouble("frMotorTarget", () -> frMotor.getPIDTarget());
+    tab.addDouble("blMotorTarget", () -> blMotor.getPIDTarget());
+    tab.addDouble("brMotorTarget", () -> brMotor.getPIDTarget());
     // ShuffleboardLayout encoderLayout =
     // tab.getLayout("encoders", "kList");
 

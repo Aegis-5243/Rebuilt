@@ -28,10 +28,10 @@ public final class Constants {
     public static final int BL_MOTOR = 11;
     public static final int BR_MOTOR = 12;
 
-    public static final int[] FL_ENCODER = { 2, 3 };
-    public static final int[] FR_ENCODER = { 6, 7 };
-    public static final int[] BL_ENCODER = { 0, 1 };
-    public static final int[] BR_ENCODER = { 4, 5 };
+    public static final int[] FL_ENCODER = { 4, 5 };
+    public static final int[] FR_ENCODER = { 2, 3 };
+    public static final int[] BL_ENCODER = { 6, 7 };
+    public static final int[] BR_ENCODER = { 0, 1 };
 
     public static final int ENCODER_CYCLES_PER_REV = 2048;
 
@@ -57,9 +57,10 @@ public final class Constants {
     public static final int PRIMARY_SHOOTER = 31;
     public static final int SECONDARY_SHOOTER = 32;
 
-    public static final double SHOOTER_kP = 0;
+    public static final double SHOOTER_kP = 0.95;
     public static final double SHOOTER_kI = 0;
     public static final double SHOOTER_kD = 0;
+    public static final double SHOOTER_KF = 10;
     
     public static final double SHOOTER_kA = 0;
     public static final double SHOOTER_kS = 0;

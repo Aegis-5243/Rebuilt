@@ -58,4 +58,6 @@ public interface DriveController {
      * @return whether the align to origin pose button is pressed
      */
     public boolean getAlignToOriginPoseButton();
+
+    public boolean getShoot();
 }
