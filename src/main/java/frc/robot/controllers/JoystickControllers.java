@@ -63,4 +63,10 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'getShoot'");
     }
 
+    @Override
+    public boolean getIntake() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getIntake'");
+    }
+
 }

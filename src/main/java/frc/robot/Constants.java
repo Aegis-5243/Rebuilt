@@ -49,7 +49,7 @@ public final class Constants {
     public static final double DRIVE_MAX_ACCELERATION = 10.0;
 
 
-    public static final int TURRET_MOTOR = 21;
+    public static final int TURRET_MOTOR = 41;
     /*** Degrees per revolution */
     public static final double TURRET_DEGREES_PER_REV = 24.0 / 5.0 * 360;
 
@@ -65,6 +65,9 @@ public final class Constants {
     public static final double SHOOTER_kA = 0;
     public static final double SHOOTER_kS = 0;
     public static final double SHOOTER_kV = 0;
+
+
+    public static final int ROLLER = 21;
 
     public static DriveController controller = new ProController(0);
 
