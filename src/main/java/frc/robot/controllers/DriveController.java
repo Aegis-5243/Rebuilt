@@ -64,4 +64,6 @@ public interface DriveController {
     public boolean getIntake();
 
     public boolean getRoller();
+
+    public double getHoodDisplacement();
 }

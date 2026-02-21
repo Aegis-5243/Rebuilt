@@ -33,29 +33,9 @@ public final class Constants {
     public static final int[] BL_ENCODER = { 6, 7 };
     public static final int[] BR_ENCODER = { 0, 1 };
 
-    public static final double FL_kS = 0;
-    public static final double FL_kV = 0;
-    public static final double FL_kA = 0;
-    public static final double FL_kP = 0;
-    public static final double FL_kD = 0;
-
-    public static final double BL_kS = 32.301;
-    public static final double BL_kV = 108.8;
-    public static final double BL_kA = 0;
-    public static final double BL_kP = 1.6878;
-    public static final double BL_kD = 0;
-    
-    public static final double FR_kS = 0;
-    public static final double FR_kV = 0;
-    public static final double FR_kA = 0;
-    public static final double FR_kP = 0;
-    public static final double FR_kD = 0;
-    
-    public static final double BR_kS = 0;
-    public static final double BR_kV = 0;
-    public static final double BR_kA = 0;
-    public static final double BR_kP = 0;
-    public static final double BR_kD = 0;
+    public static final double DRIVE_kS = 0.725;
+    public static final double DRIVE_kV = 2.58;
+    public static final double DRIVE_kA = 0.59;
 
     public static final int ENCODER_CYCLES_PER_REV = 2048;
 
@@ -84,7 +64,7 @@ public final class Constants {
     public static final double SHOOTER_kP = 0.95;
     public static final double SHOOTER_kI = 0;
     public static final double SHOOTER_kD = 0;
-    public static final double SHOOTER_KF = 10;
+    public static final double SHOOTER_kF = 10;
     
     public static final double SHOOTER_kA = 0;
     public static final double SHOOTER_kS = 0;

@@ -28,10 +28,9 @@ public class ShooterSubsystem extends SubsystemBase {
     public VoltageOut voltageRequest;
     public DutyCycleOut dutyCycleRequest;
 
-    GenericEntry kp;
-    GenericEntry kf;
-
     public SysIdRoutine sysId;
+
+    public GenericEntry targetRPM;
 
     /** Creates a new ExampleSubsystem. */
     public ShooterSubsystem() {
@@ -42,6 +41,10 @@ public class ShooterSubsystem extends SubsystemBase {
                 () -> Units.RotationsPerSecond.of(primaryShooter.getVelocity().getValueAsDouble()).in(Units.RPM));
         Shuffleboard.getTab("pid").addDouble("rpm-sec",
                 () -> Units.RotationsPerSecond.of(secondaryShooter.getVelocity().getValueAsDouble()).in(Units.RPM));
+        Shuffleboard.getTab("pid").addDouble("motor_curr_target", () -> Units.RotationsPerSecond
+                .of(primaryShooter.getClosedLoopReference().getValueAsDouble()).in(Units.RPM));
+
+        targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 6000).getEntry();
 
         secondaryShooter.setControl(new Follower(Constants.PRIMARY_SHOOTER, MotorAlignmentValue.Opposed));
 
@@ -74,8 +77,8 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void setVelocity(AngularVelocity speed) {
-        primaryShooter.setControl(velocityRequest.withVelocity(speed).withFeedForward(Constants.SHOOTER_KF));
-        
+        primaryShooter.setControl(velocityRequest.withVelocity(speed).withFeedForward(Constants.SHOOTER_kF));
+
     }
 
     public void setDutyCycle(double speed) {

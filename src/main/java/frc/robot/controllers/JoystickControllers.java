@@ -73,4 +73,10 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'getRoller'");
     }
 
+    @Override
+    public double getHoodDisplacement() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getHoodDisplacement'");
+    }
+
 }

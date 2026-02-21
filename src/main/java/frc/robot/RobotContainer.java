@@ -8,8 +8,10 @@ import frc.robot.commands.Autos;
 import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
 import frc.robot.intake.IntakeSubsystem;
+import frc.robot.shooter.HoodSubsystem;
 import frc.robot.shooter.RollerSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
+import edu.wpi.first.math.MathUtil;
 // import frc.robot.shooter.HoodSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,8 +37,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 public class RobotContainer {
     // The robot's subsystems and commands are defined here...
     private final DriveSubsystem driveSubsystem = new DriveSubsystem();
-    // private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
-    // private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+    private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
+    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
     private final RollerSubsystem rollerSubsystem = new RollerSubsystem();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
 
@@ -45,13 +47,15 @@ public class RobotContainer {
      */
     public RobotContainer() {
         driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
-        // shooterSubsystem.setDefaultCommand(shooterSubsystem.run(() -> {
-        // shooterSubsystem.setDutyCycle(0);
-        // }));
+        shooterSubsystem.setDefaultCommand(shooterSubsystem.run(() -> {
+            shooterSubsystem.setDutyCycle(0);
+        }));
         rollerSubsystem.setDefaultCommand(rollerSubsystem.run(() -> {
             rollerSubsystem.roller.set(0);
         }));
         intakeSubsystem.setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0)));
+        hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() -> hoodSubsystem.setPos(MathUtil
+                .clamp(hoodSubsystem.hoodServo.get() + Constants.controller.getHoodDisplacement() * 0.05, 0, 1))));
 
         // Configure the trigger bindings
         configureBindings();
@@ -79,8 +83,10 @@ public class RobotContainer {
                 .whileTrue(driveSubsystem.sysId.quasistatic(Direction.kReverse));
         new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
                 .whileTrue(driveSubsystem.sysId.dynamic(Direction.kForward));
+        // new Trigger(() -> Constants.controller.getResetPoseButton())
+        // .whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
         new Trigger(() -> Constants.controller.getResetPoseButton())
-                .whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
+                .whileTrue(driveSubsystem.run(() -> driveSubsystem.voltageDrive()));
 
         // Drive field centric
         // new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
@@ -105,12 +111,11 @@ public class RobotContainer {
         // .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0,
         // Rotation2d.kZero)));
 
-        // new Trigger(() ->
-        // Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
-        // shooterSubsystem.setVelocity(Units.RPM.of(6000));
+        new Trigger(() -> Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
+            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(6000)));
 
-        // System.out.println("rpm");
-        // }, () -> shooterSubsystem.setDutyCycle(0)));
+            System.out.println("rpm");
+        }, () -> shooterSubsystem.setDutyCycle(0)));
 
         new Trigger(() -> Constants.controller.getRoller()).whileTrue(
                 rollerSubsystem.runEnd(() -> {
@@ -119,7 +124,7 @@ public class RobotContainer {
                 }, () -> rollerSubsystem.roller.set(0)));
 
         new Trigger(() -> Constants.controller.getIntake()).whileTrue(
-                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.5), () -> intakeSubsystem.intake.set(0)));
+                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.9), () -> intakeSubsystem.intake.set(0)));
     }
 
     /**

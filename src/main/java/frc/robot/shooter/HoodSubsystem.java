@@ -8,6 +8,7 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
@@ -18,6 +19,8 @@ public class HoodSubsystem extends SubsystemBase {
     /** Creates a new ExampleSubsystem. */
     public HoodSubsystem() {
         hoodServo = new Servo(0);
+        Shuffleboard.getTab("hood").add(hoodServo);
+        Shuffleboard.getTab("hood").addDouble("controlelr", ()->Constants.controller.getHoodDisplacement());
     }
 
     /**

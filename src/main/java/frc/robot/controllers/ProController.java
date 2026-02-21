@@ -49,7 +49,8 @@ public class ProController implements DriveController {
 
     @Override
     public boolean getDriveFieldCentricSnappingMode() {
-        return controller.getRightBumperButton();
+        // return controller.getRightBumperButton();
+        return controller.getXButton();
     }
 
     @Override
@@ -64,16 +65,30 @@ public class ProController implements DriveController {
 
     @Override
     public boolean getShoot() {
-        return controller.getAButton();
+        // return controller.getAButton();
+        return controller.getRightTriggerAxis() > 0.6 || controller.getBButton();
     }
 
     @Override
     public boolean getIntake() {
-        return controller.getXButton();
+        return controller.getLeftBumperButton() || controller.getBButton();
+        // return controller.getXButton();
     }
 
     @Override
     public boolean getRoller() {
-        return controller.getYButton();
+        // return controller.getYButton();
+        return controller.getRightBumperButton() || controller.getBButton();
+    }
+
+    @Override
+    public double getHoodDisplacement() {
+        double res = controller.getPOV();
+
+        if (res == -1)
+            return 0;
+        else if ((0 <= res && res <= 90) || res >= 270) 
+            return 1;
+        return -1;
     }
 }

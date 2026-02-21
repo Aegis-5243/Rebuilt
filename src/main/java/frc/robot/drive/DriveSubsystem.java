@@ -5,6 +5,7 @@
 package frc.robot.drive;
 
 import java.lang.reflect.Field;
+import java.net.ContentHandler;
 import java.util.function.DoubleSupplier;
 
 import com.playingwithfusion.CANVenom;
@@ -15,6 +16,7 @@ import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -22,6 +24,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
@@ -47,6 +50,11 @@ public class DriveSubsystem extends SubsystemBase {
   public Encoder blEncoder;
   public Encoder brEncoder;
 
+  public SimpleMotorFeedforward flFeedforward;
+  public SimpleMotorFeedforward frFeedforward;
+  public SimpleMotorFeedforward blFeedforward;
+  public SimpleMotorFeedforward brFeedforward;
+
   public CustomMecanumDrive drive;
   public MecanumDriveKinematics kinematics;
   public MecanumDrivePoseEstimator poseEstimator;
@@ -60,6 +68,8 @@ public class DriveSubsystem extends SubsystemBase {
   private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
 
   private Rotation2d snapDirection = Rotation2d.kZero;
+
+  public GenericEntry volts;
 
   /** Creates a new ExampleSubsystem. */
   public DriveSubsystem() {
@@ -86,6 +96,11 @@ public class DriveSubsystem extends SubsystemBase {
     frMotor.setPID(p, i, d, f, b);
     blMotor.setPID(p, i, d, f, b);
     brMotor.setPID(p, i, d, f, b);
+
+    flFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
+    frFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
+    blFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
+    brFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
 
     flMotor.setMaxSpeed(5000);
     frMotor.setMaxSpeed(5000);
@@ -125,10 +140,14 @@ public class DriveSubsystem extends SubsystemBase {
     /*** m/s to rpm */
     double metersPerSecondToRPM = 60 / Constants.WHEEL_DISTANCE_PER_MOTOR_REV;
     drive = new CustomMecanumDrive(
-        v -> flMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)), 
-        v -> blMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)),
-        v -> frMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)),
-        v -> brMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)));
+        v -> flMotor.setVoltage(flFeedforward.calculate(v)), 
+        v -> blMotor.setVoltage(blFeedforward.calculate(v)),
+        v -> frMotor.setVoltage(frFeedforward.calculate(v)),
+        v -> brMotor.setVoltage(brFeedforward.calculate(v)));
+        // v -> flMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)), 
+        // v -> blMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)),
+        // v -> frMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)),
+        // v -> brMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)));
 
     // TODO: get measurements of wheels
     kinematics = new CustomMecanumDriveKinematics(
@@ -200,6 +219,8 @@ public class DriveSubsystem extends SubsystemBase {
     tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
     tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
     tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
+    tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
+    volts = tab.add("drive-voltage", 0).getEntry();
 
     field = new Field2d();
     tab.add("Field", field);
@@ -362,6 +383,13 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void resetPos() {
     poseEstimator.resetPose(new Pose2d(0.0, 0.0, Rotation2d.kZero));
+  }
+
+  public void voltageDrive() {
+    flMotor.setVoltage(-volts.getDouble(0));
+    frMotor.setVoltage(-volts.getDouble(0));
+    blMotor.setVoltage(-volts.getDouble(0));
+    brMotor.setVoltage(-volts.getDouble(0));
   }
 
   @Override
