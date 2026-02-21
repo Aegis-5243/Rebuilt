@@ -80,8 +80,8 @@ public class DriveSubsystem extends SubsystemBase {
     blMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
     brMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
 
-    double p = 0.195, i = 0.0, d = 0.0, f = 0.184, b = 0.0;
-
+    double p = 0.3, i = 0.0, d = 0.03, f = 0.184, b = 0.0;
+ // 0.195, 0, 0.01, 0.184, 0
     flMotor.setPID(p, i, d, f, b);
     frMotor.setPID(p, i, d, f, b);
     blMotor.setPID(p, i, d, f, b);
@@ -125,10 +125,10 @@ public class DriveSubsystem extends SubsystemBase {
     /*** m/s to rpm */
     double metersPerSecondToRPM = 60 / Constants.WHEEL_DISTANCE_PER_MOTOR_REV;
     drive = new CustomMecanumDrive(
-        v -> flMotor.setCommand(controlMode, v * metersPerSecondToRPM),
-        v -> blMotor.setCommand(controlMode, v * metersPerSecondToRPM),
-        v -> frMotor.setCommand(controlMode, v * metersPerSecondToRPM),
-        v -> brMotor.setCommand(controlMode, v * metersPerSecondToRPM));
+        v -> flMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)), 
+        v -> blMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)),
+        v -> frMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)),
+        v -> brMotor.set(0.5 * v / (Constants.DRIVE_MAX_SPEED)));
 
     // TODO: get measurements of wheels
     kinematics = new CustomMecanumDriveKinematics(
@@ -152,23 +152,23 @@ public class DriveSubsystem extends SubsystemBase {
         log -> {
           log.motor("drive-front-right")
               .voltage(Units.Volts.of(frMotor.getBusVoltage()))
-              .linearPosition(Units.Meters.of(frEncoder.getDistance()))
-              .linearVelocity(Units.MetersPerSecond.of(frEncoder.getRate()));
-
+              .linearPosition(Units.Meters.of(-frEncoder.getDistance()))
+              .linearVelocity(Units.MetersPerSecond.of(-frEncoder.getRate()));
+              
           log.motor("drive-front-left")
               .voltage(Units.Volts.of(flMotor.getBusVoltage()))
-              .linearPosition(Units.Meters.of(flEncoder.getDistance()))
-              .linearVelocity(Units.MetersPerSecond.of(flEncoder.getRate()));
+              .linearPosition(Units.Meters.of(-flEncoder.getDistance()))
+              .linearVelocity(Units.MetersPerSecond.of(-flEncoder.getRate()));
 
           log.motor("drive-back-left")
               .voltage(Units.Volts.of(blMotor.getBusVoltage()))
-              .linearPosition(Units.Meters.of(blEncoder.getDistance()))
-              .linearVelocity(Units.MetersPerSecond.of(blEncoder.getRate()));
+              .linearPosition(Units.Meters.of(-blEncoder.getDistance()))
+              .linearVelocity(Units.MetersPerSecond.of(-blEncoder.getRate()));
 
           log.motor("drive-back-right")
               .voltage(Units.Volts.of(brMotor.getBusVoltage()))
-              .linearPosition(Units.Meters.of(brEncoder.getDistance()))
-              .linearVelocity(Units.MetersPerSecond.of(brEncoder.getRate()));
+              .linearPosition(Units.Meters.of(-brEncoder.getDistance()))
+              .linearVelocity(Units.MetersPerSecond.of(-brEncoder.getRate()));
         },
         this));
 
@@ -183,6 +183,12 @@ public class DriveSubsystem extends SubsystemBase {
     tab.addDouble("frMotorTarget", () -> frMotor.getPIDTarget());
     tab.addDouble("blMotorTarget", () -> blMotor.getPIDTarget());
     tab.addDouble("brMotorTarget", () -> brMotor.getPIDTarget());
+
+    ShuffleboardTab othertab = Shuffleboard.getTab("more drivetrain");
+    othertab.addDouble("flMotorHBridge", () -> flMotor.get());
+    othertab.addDouble("frMotorHBridge", () -> frMotor.get());
+    othertab.addDouble("blMotorHBridge", () -> blMotor.get());
+    othertab.addDouble("brMotorHBridge", () -> brMotor.get());
     // ShuffleboardLayout encoderLayout =
     // tab.getLayout("encoders", "kList");
 

@@ -33,6 +33,30 @@ public final class Constants {
     public static final int[] BL_ENCODER = { 6, 7 };
     public static final int[] BR_ENCODER = { 0, 1 };
 
+    public static final double FL_kS = 0;
+    public static final double FL_kV = 0;
+    public static final double FL_kA = 0;
+    public static final double FL_kP = 0;
+    public static final double FL_kD = 0;
+
+    public static final double BL_kS = 32.301;
+    public static final double BL_kV = 108.8;
+    public static final double BL_kA = 0;
+    public static final double BL_kP = 1.6878;
+    public static final double BL_kD = 0;
+    
+    public static final double FR_kS = 0;
+    public static final double FR_kV = 0;
+    public static final double FR_kA = 0;
+    public static final double FR_kP = 0;
+    public static final double FR_kD = 0;
+    
+    public static final double BR_kS = 0;
+    public static final double BR_kV = 0;
+    public static final double BR_kA = 0;
+    public static final double BR_kP = 0;
+    public static final double BR_kD = 0;
+
     public static final int ENCODER_CYCLES_PER_REV = 2048;
 
     public static final double DRIVE_GEARBOX_RATIO = 9.13;
@@ -67,7 +91,8 @@ public final class Constants {
     public static final double SHOOTER_kV = 0;
 
 
-    public static final int ROLLER = 21;
+    public static final int ROLLER = 22;
+    public static final int INTAKE = 21;
 
     public static DriveController controller = new ProController(0);
 

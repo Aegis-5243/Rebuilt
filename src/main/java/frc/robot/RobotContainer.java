@@ -7,6 +7,7 @@ package frc.robot;
 import frc.robot.commands.Autos;
 import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
+import frc.robot.intake.IntakeSubsystem;
 import frc.robot.shooter.RollerSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
 // import frc.robot.shooter.HoodSubsystem;
@@ -35,20 +36,22 @@ public class RobotContainer {
     // The robot's subsystems and commands are defined here...
     private final DriveSubsystem driveSubsystem = new DriveSubsystem();
     // private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
-    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+    // private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
     private final RollerSubsystem rollerSubsystem = new RollerSubsystem();
+    private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
     public RobotContainer() {
         driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
-        shooterSubsystem.setDefaultCommand(shooterSubsystem.run(() -> {
-            shooterSubsystem.setDutyCycle(0);
-        }));
+        // shooterSubsystem.setDefaultCommand(shooterSubsystem.run(() -> {
+        // shooterSubsystem.setDutyCycle(0);
+        // }));
         rollerSubsystem.setDefaultCommand(rollerSubsystem.run(() -> {
             rollerSubsystem.roller.set(0);
         }));
+        intakeSubsystem.setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0)));
 
         // Configure the trigger bindings
         configureBindings();
@@ -70,54 +73,53 @@ public class RobotContainer {
      */
     private void configureBindings() {
         // temp binds for drivetrain characterization
-        // new JoystickButton(Constants.controller,
-        // XboxController.Button.kA.value).whileTrue(driveSubsystem.sysId.quasistatic(Direction.kForward));
-        // new JoystickButton(Constants.controller,
-        // XboxController.Button.kB.value).whileTrue(driveSubsystem.sysId.quasistatic(Direction.kReverse));
-        // new JoystickButton(Constants.controller,
-        // XboxController.Button.kX.value).whileTrue(driveSubsystem.sysId.dynamic(Direction.kForward));
-        // new JoystickButton(Constants.controller,
-        // XboxController.Button.kY.value).whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
+        new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
+                .whileTrue(driveSubsystem.sysId.quasistatic(Direction.kForward));
+        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingOriginMode())
+                .whileTrue(driveSubsystem.sysId.quasistatic(Direction.kReverse));
+        new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
+                .whileTrue(driveSubsystem.sysId.dynamic(Direction.kForward));
+        new Trigger(() -> Constants.controller.getResetPoseButton())
+                .whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
 
         // Drive field centric
-        new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+        // new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
+        // .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
 
-        // Drive field centric facing origin
-        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingOriginMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() -> 0, () -> 0));
+        // // Drive field centric facing origin
+        // new Trigger(() ->
+        // Constants.controller.getDriveFieldCentricFacingOriginMode())
+        // .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() ->
+        // 0, () -> 0));
 
-        // Drive field centric snapping
-        new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
+        // // Drive field centric snapping
+        // new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
+        // .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
 
-        // Reset pose to origin
-        new Trigger(() -> Constants.controller.getResetPoseButton())
-                .onTrue(Commands.runOnce(driveSubsystem::resetPos));
+        // // Reset pose to origin
+        // new Trigger(() -> Constants.controller.getResetPoseButton())
+        // .onTrue(Commands.runOnce(driveSubsystem::resetPos));
 
-        // Align to origin pose with deceleration
-        new Trigger(() -> Constants.controller.getAlignToOriginPoseButton())
-                .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0,
-                        Rotation2d.kZero)));
+        // // Align to origin pose with deceleration
+        // new Trigger(() -> Constants.controller.getAlignToOriginPoseButton())
+        // .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0,
+        // Rotation2d.kZero)));
 
         // new Trigger(() ->
         // Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
-        // shooterSubsystem.setDutyCycle(.75);
+        // shooterSubsystem.setVelocity(Units.RPM.of(6000));
 
-        // System.out.println("duty cycle");
+        // System.out.println("rpm");
         // }, () -> shooterSubsystem.setDutyCycle(0)));
 
-        new Trigger(() -> Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
-            shooterSubsystem.setVelocity(Units.RPM.of(6000));
-
-            System.out.println("rpm");
-        }, () -> shooterSubsystem.setDutyCycle(0)));
-
-        new Trigger(() -> Constants.controller.getIntake()).whileTrue(
+        new Trigger(() -> Constants.controller.getRoller()).whileTrue(
                 rollerSubsystem.runEnd(() -> {
                     rollerSubsystem.roller.set(.5);
                     System.out.println("rolling");
                 }, () -> rollerSubsystem.roller.set(0)));
+
+        new Trigger(() -> Constants.controller.getIntake()).whileTrue(
+                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.5), () -> intakeSubsystem.intake.set(0)));
     }
 
     /**

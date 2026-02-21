@@ -62,4 +62,6 @@ public interface DriveController {
     public boolean getShoot();
 
     public boolean getIntake();
+
+    public boolean getRoller();
 }

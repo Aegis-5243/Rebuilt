@@ -17,9 +17,7 @@ public class RollerSubsystem extends SubsystemBase {
         // they are all following each other for now.
         roller = new SparkMax(Constants.ROLLER, MotorType.kBrushless);
     }
-
     
-
     @Override
     public void periodic() {
         // This method will be called once per scheduler run

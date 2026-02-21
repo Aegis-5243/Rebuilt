@@ -71,4 +71,9 @@ public class ProController implements DriveController {
     public boolean getIntake() {
         return controller.getXButton();
     }
+
+    @Override
+    public boolean getRoller() {
+        return controller.getYButton();
+    }
 }
