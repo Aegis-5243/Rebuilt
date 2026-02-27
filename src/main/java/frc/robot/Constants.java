@@ -55,8 +55,14 @@ public final class Constants {
 
     public static final int TURRET_MOTOR = 41;
     /*** Degrees per revolution */
-    public static final double TURRET_DEGREES_PER_REV = 24.0 / 5.0 * 360;
+    public static final double TURRET_DEGREES_PER_REV = 7.875;//(5.0 / 24.0) * 360;
+    /*** Distance between center of turret and limelight lens */
+    public static final Distance TURRET_RADIUS = Units.Inches.of(7.5);
+    public static final Distance CENTER_OF_BOT_TO_CENTER_OF_TURRET = Units.Inches.of(8.5);
+    public static final String TURRET_LIMELIGHT = "";
 
+    //limelight hight 19.25
+    // pitch 28.725 degress
 
     public static final int PRIMARY_SHOOTER = 31;
     public static final int SECONDARY_SHOOTER = 32;

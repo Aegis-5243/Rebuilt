@@ -14,7 +14,7 @@ public class ProController implements DriveController {
 
         tab.addDouble("driveX", () -> getDriveX());
         tab.addDouble("driveY", () -> getDriveY());
-        tab.addDouble("driveTurn", () -> getDriveTurn());
+        tab.addDouble("driveTurn", () -> getTurretDisplacement());
     }
     
     @Override
@@ -85,10 +85,21 @@ public class ProController implements DriveController {
     public double getHoodDisplacement() {
         double res = controller.getPOV();
 
-        if (res == -1)
-            return 0;
-        else if ((0 <= res && res <= 90) || res >= 270) 
+        
+        if (res == 0) 
             return 1;
-        return -1;
+        else if (res == 180)
+            return -1;
+        return 0;
+    }
+
+    public double getTurretDisplacement() {
+        double res = controller.getPOV();
+
+        if (res == 90) 
+            return 1;
+        else if (res == 270)
+            return -1;
+        return 0;
     }
 }

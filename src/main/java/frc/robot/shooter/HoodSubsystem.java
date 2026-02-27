@@ -13,13 +13,15 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 
-public class HoodSubsystem extends SubsystemBase {
-    public Servo hoodServo;
+public class HoodSubsystem extends SubsystemBase { 
+    public Servo primaryHoodServo;
+    public Servo secondaryHoodServo;
 
     /** Creates a new ExampleSubsystem. */
     public HoodSubsystem() {
-        hoodServo = new Servo(0);
-        Shuffleboard.getTab("hood").add(hoodServo);
+        primaryHoodServo = new Servo(0);
+        secondaryHoodServo = new Servo(9);
+        Shuffleboard.getTab("hood").add(primaryHoodServo);
         Shuffleboard.getTab("hood").addDouble("controlelr", ()->Constants.controller.getHoodDisplacement());
     }
 
@@ -29,7 +31,8 @@ public class HoodSubsystem extends SubsystemBase {
      * @param position Position between 0.0 and 1.0
      */
     public void setPos(double position) {
-        hoodServo.set(position);
+        primaryHoodServo.set(position);
+        secondaryHoodServo.set(position);
     }
 
     /**
@@ -39,7 +42,8 @@ public class HoodSubsystem extends SubsystemBase {
      */
     public void setDistance(Distance distance) {
         double position = Math.min(Math.max(distance.in(Units.Millimeters) / 100.0, 0.0), 1.0);
-        hoodServo.set(position);
+        primaryHoodServo.set(position);
+        secondaryHoodServo.set(position);
     }
 
     @Override

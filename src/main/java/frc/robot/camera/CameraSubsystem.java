@@ -1,0 +1,129 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.camera;
+
+import java.util.Arrays;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
+
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+
+import edu.wpi.first.cscore.HttpCamera;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.utils.LimelightHelpers;
+
+public class CameraSubsystem extends SubsystemBase {
+    public HttpCamera turretLimelight;
+    public Supplier<Pose2d> poseSupplier;
+    public DoubleSupplier yaw;
+    public Supplier<AngularVelocity> angularVelocity;
+    public Supplier<Angle> robotYaw;
+    public Supplier<Angle> turretAngle;
+    public boolean doPoseEstimation;
+    public Pose2d limelightPose;
+    public Pose2d robotPose;
+    public double timestamp;
+    public boolean rejectUpdate;
+
+    /** Creates a new ExampleSubsystem. */
+    public CameraSubsystem(Supplier<Pose2d> poseSupplier, DoubleSupplier yawSupplier,
+            Supplier<AngularVelocity> angularVelocitySupplier, Supplier<Angle> turretAngle) {
+        this.poseSupplier = poseSupplier;
+        this.yaw = yawSupplier;
+        this.angularVelocity = angularVelocitySupplier;
+        this.limelightPose = Pose2d.kZero;
+        this.timestamp = 0;
+        this.rejectUpdate = true;
+        this.turretAngle = turretAngle;
+        // TODO CHANGE TO TRUE WHEn REAFDY
+        this.doPoseEstimation = false;
+        // turretLimelight = new HttpCamera("turret_limelight", "10.52.43.11:5801");
+
+        // Shuffleboard.getTab("camera").add(turretLimelight);
+    }
+
+    public void updateVisionPose() {
+        boolean useMegaTag2 = true; // set to false to use MegaTag1
+        boolean doRejectUpdate = false;
+        if (useMegaTag2 == false) {
+            LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+
+            if (mt1.tagCount == 1 && mt1.rawFiducials.length == 1) {
+                if (mt1.rawFiducials[0].ambiguity > .7) {
+                    doRejectUpdate = true;
+                }
+                if (mt1.rawFiducials[0].distToCamera > 3) {
+                    doRejectUpdate = true;
+                }
+            }
+            if (mt1.tagCount == 0) {
+                doRejectUpdate = true;
+            }
+
+            if (!doRejectUpdate) {
+                limelightPose = mt1.pose;
+                timestamp = mt1.timestampSeconds;
+            }
+            this.rejectUpdate = doRejectUpdate;
+        } else if (useMegaTag2 == true) {
+            LimelightHelpers.SetRobotOrientation("limelight",
+                    poseSupplier.get().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+            LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+            if (Math.abs(angularVelocity.get().in(Units.DegreesPerSecond)) > 720) // if our angular velocity is greater than 720 degrees per second,
+                                                  // ignore vision updates
+            {
+                doRejectUpdate = true;
+            }
+            if (mt2.tagCount == 0) {
+                doRejectUpdate = true;
+            }
+            if (!doRejectUpdate) {
+                limelightPose = mt2.pose;
+                timestamp = mt2.timestampSeconds;
+            } 
+            this.rejectUpdate = doRejectUpdate;
+        }
+    }
+
+    public void translatePose() {
+
+    }
+
+
+    /**
+     * Returns the theta difference between the limelight and the hub.
+     * @return theta if looking at hub, else Double.NaN
+     */
+    public double getThetaDiff() {
+        Double[] validIDs = {11.0, 2.0, 3.0, 4.0, 5.0, 8.0, 9.0, 10.0, 19.0, 20.0, 21.0, 24.0, 25.0, 26.0, 18.0, 27.0};
+        
+        if (Arrays.asList(validIDs).contains(LimelightHelpers.getFiducialID(Constants.TURRET_LIMELIGHT)))
+            return LimelightHelpers.getTX(Constants.TURRET_LIMELIGHT);
+        return Double.NaN;
+    }
+
+    @Override
+    public void periodic() {
+        if (this.doPoseEstimation) {
+            updateVisionPose();
+            translatePose();
+        }
+        // This method will be called once per scheduler run
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        // This method will be called once per scheduler run during simulation
+    }
+}

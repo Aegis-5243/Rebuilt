@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import frc.robot.camera.CameraSubsystem;
 import frc.robot.commands.Autos;
 import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
@@ -11,6 +12,7 @@ import frc.robot.intake.IntakeSubsystem;
 import frc.robot.shooter.HoodSubsystem;
 import frc.robot.shooter.RollerSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
+import frc.robot.shooter.TurretSubsystem;
 import edu.wpi.first.math.MathUtil;
 // import frc.robot.shooter.HoodSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -41,6 +43,8 @@ public class RobotContainer {
     private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
     private final RollerSubsystem rollerSubsystem = new RollerSubsystem();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+    private final TurretSubsystem turretSubsystem = new TurretSubsystem();
+    private final CameraSubsystem cameraSubsystem = new CameraSubsystem(null, null, null, null);
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -55,8 +59,8 @@ public class RobotContainer {
         }));
         intakeSubsystem.setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0)));
         hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() -> hoodSubsystem.setPos(MathUtil
-                .clamp(hoodSubsystem.hoodServo.get() + Constants.controller.getHoodDisplacement() * 0.05, 0, 1))));
-
+                .clamp(hoodSubsystem.primaryHoodServo.get() + Constants.controller.getHoodDisplacement() * 0.05, 0, 1))));
+        turretSubsystem.setDefaultCommand(turretSubsystem.run(() -> {turretSubsystem.setPower(Constants.controller.getTurretDisplacement() * 0.2);}));
         // Configure the trigger bindings
         configureBindings();
     }
@@ -110,6 +114,12 @@ public class RobotContainer {
         // new Trigger(() -> Constants.controller.getAlignToOriginPoseButton())
         // .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0,
         // Rotation2d.kZero)));
+
+        new Trigger(() -> Constants.controller.getResetPoseButton()).whileTrue(turretSubsystem.run(() -> {
+            double theta = cameraSubsystem.getThetaDiff();
+            turretSubsystem.setPower(-(theta / 180 * .5));
+            System.out.println(theta);
+        }));
 
         new Trigger(() -> Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
             shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(6000)));

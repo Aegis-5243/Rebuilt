@@ -7,6 +7,9 @@ package frc.robot.shooter;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
+
+import javax.lang.model.util.ElementScanner14;
+
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -17,35 +20,42 @@ import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class TurretSubsystem extends SubsystemBase {
     public SparkMax turret;
-    public AbsoluteEncoder turretEncoder;
-    public SparkClosedLoopController pidController;
+    public RelativeEncoder turretEncoder;
 
     /** Creates a new ExampleSubsystem. */
     public TurretSubsystem() {
         // TODO: config in rev hardware client
         turret = new SparkMax(Constants.TURRET_MOTOR, MotorType.kBrushless);
 
-        turretEncoder = turret.getAbsoluteEncoder();
+        turretEncoder = turret.getEncoder();
         turret.configure(
                 new SparkMaxConfig()
-                        .apply(new AbsoluteEncoderConfig().positionConversionFactor(Constants.TURRET_DEGREES_PER_REV)),
+                        .apply(new EncoderConfig().positionConversionFactor(Constants.TURRET_DEGREES_PER_REV)),
                 ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        pidController = turret.getClosedLoopController();
-
+        DutyCycleEncoder encoder = new DutyCycleEncoder(9);
+        Shuffleboard.getTab("turret").addDouble("turret-encoder", () -> turretEncoder.getPosition());
+        Shuffleboard.getTab("turret").addDouble("turret-encoder2", () -> encoder.get());
+        Shuffleboard.getTab("turret").addBoolean("turretEncoderConnected", () -> encoder.isConnected());
     }
 
     public double getHeading() {
         return turretEncoder.getPosition();
     }
-
-    public void moveToHeading(double heading) {
-        pidController.setSetpoint(heading, ControlType.kPosition);
+    public void setPower(double power) {
+        if (power < 0 && turretEncoder.getPosition() > -90)
+            turret.set(power);
+        else if (power > 0 && turretEncoder.getPosition() < 90)
+            turret.set(power);
+        else
+            turret.set(0);
     }
 
     @Override
