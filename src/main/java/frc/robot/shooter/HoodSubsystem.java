@@ -19,7 +19,7 @@ public class HoodSubsystem extends SubsystemBase {
 
     /** Creates a new ExampleSubsystem. */
     public HoodSubsystem() {
-        primaryHoodServo = new Servo(0);
+        primaryHoodServo = new Servo(8);
         secondaryHoodServo = new Servo(9);
         Shuffleboard.getTab("hood").add(primaryHoodServo);
         Shuffleboard.getTab("hood").addDouble("controlelr", ()->Constants.controller.getHoodDisplacement());

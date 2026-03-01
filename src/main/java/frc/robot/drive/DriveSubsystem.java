@@ -6,7 +6,9 @@ package frc.robot.drive;
 
 import java.lang.reflect.Field;
 import java.net.ContentHandler;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import com.playingwithfusion.CANVenom;
 import com.playingwithfusion.CANVenom.BrakeCoastMode;
@@ -15,6 +17,7 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator;
@@ -26,17 +29,24 @@ import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.CustomMecanumDrive;
 import frc.lib.CustomMecanumDriveKinematics;
 import frc.robot.Constants;
+import frc.robot.Robot;
+import frc.robot.utils.Utilities;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -64,6 +74,11 @@ public class DriveSubsystem extends SubsystemBase {
   public SysIdRoutine sysId;
 
   public Field2d field;
+
+  public Supplier<Pose2d> limelightPose;
+  public DoubleSupplier limelightTimestamp;
+  public Supplier<Angle> turretAngle;
+  public Supplier<Boolean> doUpdate;
 
   private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
 
@@ -134,6 +149,8 @@ public class DriveSubsystem extends SubsystemBase {
     brEncoder.setDistancePerPulse(Constants.WHEEL_DISTANCE_PER_PULSE);
 
     gyro = new AHRS(NavXComType.kMXP_SPI);
+    // if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
+    //   gyro.setAngleAdjustment(180);
     gyro.reset();
 
     ControlMode controlMode = ControlMode.SpeedControl;
@@ -191,7 +208,7 @@ public class DriveSubsystem extends SubsystemBase {
         },
         this));
 
-    tab.addDouble("gyroYaw", gyro::getYaw);
+    tab.addDouble("gyroYaw", gyro::getAngle);
     tab.add("flMotor", flMotor);
     tab.add("frMotor", frMotor);
     tab.add("blMotor", blMotor);
@@ -226,6 +243,27 @@ public class DriveSubsystem extends SubsystemBase {
     tab.add("Field", field);
 
     rotController.enableContinuousInput(-180, 180);
+  }
+
+  public void setLimelightPoseSupplier(Supplier<Pose2d> supllier) {
+    limelightPose = supllier;
+  }
+
+  public void setLimelightTimestampSupplier(DoubleSupplier supplier) {
+    limelightTimestamp = supplier;
+  }
+
+  public void setTurretAngleSupplier(Supplier<Angle> supplier) {
+    turretAngle = supplier;
+  }
+
+  public void setLimelightUpdateSupplier(Supplier<Boolean> supplier) {
+    doUpdate = supplier;
+  }
+
+  public void setPoseToCam() {
+    Pose2d robotPose = Utilities.cameraToBot(limelightPose.get(), turretAngle.get(), gyro.getRotation2d());
+    poseEstimator.resetPose(new Pose2d(robotPose.getMeasureX(), robotPose.getMeasureY(), gyro.getRotation2d()));
   }
 
   public double getMaxSpeed() {
@@ -375,6 +413,12 @@ public class DriveSubsystem extends SubsystemBase {
         Units.Meters.of(blEncoder.getDistance()),
         Units.Meters.of(brEncoder.getDistance())));
     field.setRobotPose(getPose());
+    if (limelightPose != null && limelightTimestamp != null && turretAngle != null && doUpdate != null && doUpdate.get()) {
+      Pose2d robotPose = Utilities.cameraToBot(limelightPose.get(), turretAngle.get(), gyro.getRotation2d());
+      field.getObject("limelight").setPose(robotPose);
+      poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
+      poseEstimator.addVisionMeasurement(robotPose, limelightTimestamp.getAsDouble());
+    }
   }
 
   public Pose2d getPose() {

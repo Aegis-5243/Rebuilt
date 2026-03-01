@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import javax.lang.model.util.ElementScanner14;
 
 import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.ColorSensorV3;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -19,15 +20,21 @@ import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.WrappingDutyCycleEncoder;
 import frc.robot.Constants;
 
 public class TurretSubsystem extends SubsystemBase {
     public SparkMax turret;
     public RelativeEncoder turretEncoder;
+    public ColorSensorV3 colorSensor;
+    private WrappingDutyCycleEncoder temp;
 
     /** Creates a new ExampleSubsystem. */
     public TurretSubsystem() {
@@ -37,18 +44,31 @@ public class TurretSubsystem extends SubsystemBase {
         turretEncoder = turret.getEncoder();
         turret.configure(
                 new SparkMaxConfig()
-                        .apply(new EncoderConfig().positionConversionFactor(Constants.TURRET_DEGREES_PER_REV)),
+                        .apply(new EncoderConfig().positionConversionFactor(Constants.TURRET_DEGREES_PER_REV))
+                        .apply(new SparkMaxConfig().idleMode(IdleMode.kBrake)),
                 ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        DutyCycleEncoder encoder = new DutyCycleEncoder(9);
+        colorSensor = new ColorSensorV3(I2C.Port.kOnboard);
+        
+        temp = new WrappingDutyCycleEncoder(9, turretEncoder::getVelocity, 0, true);
+        DigitalInput inp = new DigitalInput(8);
+        // encoder.
         Shuffleboard.getTab("turret").addDouble("turret-encoder", () -> turretEncoder.getPosition());
-        Shuffleboard.getTab("turret").addDouble("turret-encoder2", () -> encoder.get());
-        Shuffleboard.getTab("turret").addBoolean("turretEncoderConnected", () -> encoder.isConnected());
+        Shuffleboard.getTab("turret").addDouble("turret-encoder-vel", turretEncoder::getVelocity);
+        Shuffleboard.getTab("turret").addDouble("turret-encoder2", () -> temp.get());
+        Shuffleboard.getTab("turret").addBoolean("turretEncoderConnected", () -> temp.isConnected());
+        Shuffleboard.getTab("color").addDouble("color-blue", colorSensor::getBlue);
+        Shuffleboard.getTab("color").addDouble("color-green", colorSensor::getGreen);
+        Shuffleboard.getTab("color").addDouble("color-red", colorSensor::getRed);
+        Shuffleboard.getTab("color").addBoolean("color-connected", colorSensor::isConnected);
+        Shuffleboard.getTab("turret").addBoolean("turret-limit", inp::get);
+        
     }
 
     public double getHeading() {
         return turretEncoder.getPosition();
     }
+
     public void setPower(double power) {
         if (power < 0 && turretEncoder.getPosition() > -90)
             turret.set(power);
@@ -61,6 +81,7 @@ public class TurretSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         // This method will be called once per scheduler run
+        temp.update();
     }
 
     @Override
