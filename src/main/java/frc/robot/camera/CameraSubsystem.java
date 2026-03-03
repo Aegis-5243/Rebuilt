@@ -19,13 +19,15 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.drive.DriveSubsystem;
+import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.LimelightHelpers;
 
 public class CameraSubsystem extends SubsystemBase {
     public HttpCamera turretLimelight;
-    public Supplier<Pose2d> poseSupplier;
-    public DoubleSupplier yaw;
-    public Supplier<AngularVelocity> angularVelocity;
+    // public Supplier<Pose2d> poseSupplier;
+    // public DoubleSupplier yaw;
+    // public Supplier<AngularVelocity> angularVelocity;
     public Supplier<Angle> robotYaw;
     public boolean doPoseEstimation;
     public Pose2d limelightPose;
@@ -34,18 +36,21 @@ public class CameraSubsystem extends SubsystemBase {
     public boolean rejectUpdate;
     public GenericEntry megatag2;
 
+    private DriveSubsystem driveSubsystem;
+    private TurretSubsystem turretSubsystem;
+
     /** Creates a new ExampleSubsystem. */
-    public CameraSubsystem(Supplier<Pose2d> poseSupplier, DoubleSupplier yawSupplier,
-            Supplier<AngularVelocity> angularVelocitySupplier) {
-        this.poseSupplier = poseSupplier;
-        this.yaw = yawSupplier;
-        this.angularVelocity = angularVelocitySupplier;
+    public CameraSubsystem(DriveSubsystem driveSubsystem) {
+        this.driveSubsystem = driveSubsystem;
+        // this.poseSupplier = poseSupplier;
+        // this.yaw = yawSupplier;
+        // this.angularVelocity = angularVelocitySupplier;
         this.limelightPose = Pose2d.kZero;
         this.timestamp = 0;
         this.rejectUpdate = true;
         // TODO CHANGE TO TRUE WHEn REAFDY
         this.doPoseEstimation = true;
-        megatag2 = Shuffleboard.getTab("camera").add("megatag2", false).getEntry();
+        megatag2 = Shuffleboard.getTab("camera").add("megatag2", true).getEntry();
         // turretLimelight = new HttpCamera("turret_limelight", "10.52.43.11:5800");
 
         // Shuffleboard.getTab("camera").add(turretLimelight);
@@ -80,20 +85,23 @@ public class CameraSubsystem extends SubsystemBase {
             }
             this.rejectUpdate = doRejectUpdate;
         } else if (useMegaTag2 == true) {
+            // double angle = driveSubsystem.getPose().getRotation().getDegrees() + 180;
+            double angle = driveSubsystem.getEstimatedCameraPose().getRotation().getDegrees() + 180;
+
             LimelightHelpers.SetRobotOrientation("limelight",
-                    poseSupplier.get().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+                    angle, 0, 0, 0, 0, 0);
             LimelightHelpers.PoseEstimate mt2;
             if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
                 mt2 = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2("limelight");
             else
                 mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
 
-            if (Math.abs(angularVelocity.get().in(Units.DegreesPerSecond)) > 720) // if our angular velocity is greater
-                                                                                  // than 720 degrees per second,
+            // if (Math.abs(angularVelocity.get().in(Units.DegreesPerSecond)) > 720) // if our angular velocity is greater
+            //                                                                       // than 720 degrees per second,
             // ignore vision updates
-            {
-                doRejectUpdate = true;
-            }
+            // {
+            //     doRejectUpdate = true;
+            // }
             if (mt2.tagCount == 0) {
                 doRejectUpdate = true;
             }

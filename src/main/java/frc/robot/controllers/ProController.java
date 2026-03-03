@@ -43,7 +43,7 @@ public class ProController implements DriveController {
     }
 
     @Override
-    public boolean getDriveFieldCentricFacingOriginMode() {
+    public boolean getDriveFieldCentricFacingHubMode() {
         return controller.getRightStickButton();
     }
 
@@ -97,9 +97,9 @@ public class ProController implements DriveController {
         double res = controller.getPOV();
 
         if (res == 90) 
-            return 1;
-        else if (res == 270)
             return -1;
+        else if (res == 270)
+            return 1;
         return 0;
     }
 }

@@ -39,7 +39,7 @@ public interface DriveController {
      * Gets whether the controller is in field-centric facing origin mode.
      * @return whether the controller is in field-centric facing origin mode
      */
-    public boolean getDriveFieldCentricFacingOriginMode();
+    public boolean getDriveFieldCentricFacingHubMode();
 
     /**
      * Gets whether the controller is in field-centric snapping mode.

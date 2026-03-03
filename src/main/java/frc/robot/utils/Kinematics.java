@@ -18,16 +18,12 @@ public class Kinematics {
     public static final Translation2d HUB_POSITION_2D = HUB_POSITION_3D.toTranslation2d();
     public static final Transform2d SHOOTER_TRANSFORM = new Transform2d(0, 0, Rotation2d.k180deg);
 
+    public static Transform2d getHubTransform2d(Pose2d pose) {
 
 
-    public static Transform2d getRobotRelativeHubTransform(Pose2d robotPos) {
-
-        Pose2d shooterPos = robotPos.transformBy(SHOOTER_TRANSFORM);
-
-        Translation2d diff = HUB_POSITION_2D.minus(shooterPos.getTranslation());
-        Rotation2d angle = diff.getAngle().minus(shooterPos.getRotation());
+        Translation2d diff = HUB_POSITION_2D.minus(pose.getTranslation());
+        Rotation2d angle = diff.getAngle().minus(pose.getRotation());
 
         return new Transform2d(diff, angle);
     }
-
 }

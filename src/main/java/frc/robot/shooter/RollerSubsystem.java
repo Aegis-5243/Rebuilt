@@ -6,17 +6,37 @@ package frc.robot.shooter;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class RollerSubsystem extends SubsystemBase {
     public SparkMax roller;
+    public SparkMax kicker;
+    public GenericEntry kickerSpeed;
 
     /** Creates a new ExampleSubsystem. */
     public RollerSubsystem() {
         // they are all following each other for now.
         roller = new SparkMax(Constants.ROLLER, MotorType.kBrushless);
+        kicker = new SparkMax(Constants.KICKER, MotorType.kBrushless);
+
+        kickerSpeed = Shuffleboard.getTab("roller").add("kicker-speed-setter", 0.5).getEntry();
     }
+
+    public void set(double speed) {
+        roller.set(speed);
+        kicker.set(speed);
+    }
+
+    public void set(double rollerSpeed, double kickerSpeed) {
+        roller.set(rollerSpeed);
+        kicker.set(kickerSpeed);
+    }
+
+
     
     @Override
     public void periodic() {

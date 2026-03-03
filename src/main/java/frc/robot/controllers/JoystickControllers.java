@@ -38,7 +38,7 @@ public class JoystickControllers implements DriveController {
     }
 
     @Override
-    public boolean getDriveFieldCentricFacingOriginMode() {
+    public boolean getDriveFieldCentricFacingHubMode() {
         return false;
     }
 

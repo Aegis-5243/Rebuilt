@@ -83,6 +83,7 @@ public final class Constants {
 
     public static final int ROLLER = 22;
     public static final int INTAKE = 21;
+    public static final int KICKER = 23;
 
     public static DriveController controller = new ProController(0);
 

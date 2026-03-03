@@ -4,6 +4,7 @@
 
 package frc.robot.shooter;
 
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -16,12 +17,14 @@ import frc.robot.Constants;
 public class HoodSubsystem extends SubsystemBase { 
     public Servo primaryHoodServo;
     public Servo secondaryHoodServo;
+    public GenericEntry hoodSetpoint;
 
     /** Creates a new ExampleSubsystem. */
     public HoodSubsystem() {
         primaryHoodServo = new Servo(8);
         secondaryHoodServo = new Servo(9);
         Shuffleboard.getTab("hood").add(primaryHoodServo);
+        hoodSetpoint = Shuffleboard.getTab("hood").add("hood-value-setter", 0).getEntry();
         Shuffleboard.getTab("hood").addDouble("controlelr", ()->Constants.controller.getHoodDisplacement());
     }
 
@@ -42,8 +45,7 @@ public class HoodSubsystem extends SubsystemBase {
      */
     public void setDistance(Distance distance) {
         double position = Math.min(Math.max(distance.in(Units.Millimeters) / 100.0, 0.0), 1.0);
-        primaryHoodServo.set(position);
-        secondaryHoodServo.set(position);
+        setPos(position);
     }
 
     @Override

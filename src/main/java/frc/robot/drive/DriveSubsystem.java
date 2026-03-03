@@ -4,9 +4,7 @@
 
 package frc.robot.drive;
 
-import java.lang.reflect.Field;
-import java.net.ContentHandler;
-import java.util.function.BooleanSupplier;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -25,28 +23,27 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
+import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.CustomMecanumDrive;
 import frc.lib.CustomMecanumDriveKinematics;
 import frc.robot.Constants;
-import frc.robot.Robot;
-import frc.robot.utils.Utilities;
+import frc.robot.shooter.TurretSubsystem;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -75,8 +72,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   public Field2d field;
 
-  public Supplier<Pose2d> limelightPose;
-  public DoubleSupplier limelightTimestamp;
+  public Supplier<Pose2d> limelightPoseSupplier;
+  public DoubleSupplier limelightTimestampSupplier;
   public Supplier<Angle> turretAngle;
   public Supplier<Boolean> doUpdate;
 
@@ -85,9 +82,11 @@ public class DriveSubsystem extends SubsystemBase {
   private Rotation2d snapDirection = Rotation2d.kZero;
 
   public GenericEntry volts;
+  private TurretSubsystem turretSubsystem;
 
   /** Creates a new ExampleSubsystem. */
-  public DriveSubsystem() {
+  public DriveSubsystem(TurretSubsystem turretSubsystem) {
+    this.turretSubsystem = turretSubsystem;
     ShuffleboardTab tab = Shuffleboard.getTab("Drivetrain");
 
     flMotor = new CANVenom(Constants.FL_MOTOR);
@@ -106,7 +105,7 @@ public class DriveSubsystem extends SubsystemBase {
     brMotor.setBrakeCoastMode(BrakeCoastMode.Brake);
 
     double p = 0.3, i = 0.0, d = 0.03, f = 0.184, b = 0.0;
- // 0.195, 0, 0.01, 0.184, 0
+    // 0.195, 0, 0.01, 0.184, 0
     flMotor.setPID(p, i, d, f, b);
     frMotor.setPID(p, i, d, f, b);
     blMotor.setPID(p, i, d, f, b);
@@ -149,22 +148,27 @@ public class DriveSubsystem extends SubsystemBase {
     brEncoder.setDistancePerPulse(Constants.WHEEL_DISTANCE_PER_PULSE);
 
     gyro = new AHRS(NavXComType.kMXP_SPI);
-    // if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
-    //   gyro.setAngleAdjustment(180);
+    // if (DriverStation.getAlliance().isPresent() &&
+    // DriverStation.getAlliance().get() == Alliance.Red)
+    // gyro.setAngleAdjustment(180);
     gyro.reset();
 
     ControlMode controlMode = ControlMode.SpeedControl;
     /*** m/s to rpm */
     double metersPerSecondToRPM = 60 / Constants.WHEEL_DISTANCE_PER_MOTOR_REV;
     drive = new CustomMecanumDrive(
-        v -> flMotor.setVoltage(flFeedforward.calculate(v)), 
+        v -> flMotor.setVoltage(flFeedforward.calculate(v)),
         v -> blMotor.setVoltage(blFeedforward.calculate(v)),
         v -> frMotor.setVoltage(frFeedforward.calculate(v)),
         v -> brMotor.setVoltage(brFeedforward.calculate(v)));
-        // v -> flMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)), 
-        // v -> blMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)),
-        // v -> frMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)),
-        // v -> brMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1, 1)));
+    // v -> flMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
+    // 1)),
+    // v -> blMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
+    // 1)),
+    // v -> frMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
+    // 1)),
+    // v -> brMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
+    // 1)));
 
     // TODO: get measurements of wheels
     kinematics = new CustomMecanumDriveKinematics(
@@ -190,7 +194,7 @@ public class DriveSubsystem extends SubsystemBase {
               .voltage(Units.Volts.of(frMotor.getBusVoltage()))
               .linearPosition(Units.Meters.of(-frEncoder.getDistance()))
               .linearVelocity(Units.MetersPerSecond.of(-frEncoder.getRate()));
-              
+
           log.motor("drive-front-left")
               .voltage(Units.Volts.of(flMotor.getBusVoltage()))
               .linearPosition(Units.Meters.of(-flEncoder.getDistance()))
@@ -246,11 +250,11 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void setLimelightPoseSupplier(Supplier<Pose2d> supllier) {
-    limelightPose = supllier;
+    limelightPoseSupplier = supllier;
   }
 
   public void setLimelightTimestampSupplier(DoubleSupplier supplier) {
-    limelightTimestamp = supplier;
+    limelightTimestampSupplier = supplier;
   }
 
   public void setTurretAngleSupplier(Supplier<Angle> supplier) {
@@ -262,7 +266,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void setPoseToCam() {
-    Pose2d robotPose = Utilities.cameraToBot(limelightPose.get(), turretAngle.get(), gyro.getRotation2d());
+    Pose2d robotPose = cameraToBot(limelightPoseSupplier.get());
     poseEstimator.resetPose(new Pose2d(robotPose.getMeasureX(), robotPose.getMeasureY(), gyro.getRotation2d()));
   }
 
@@ -401,7 +405,7 @@ public class DriveSubsystem extends SubsystemBase {
     driveRobotCentric(driveX, driveY, driveTurn);
   }
 
-  public Command controllerDriveRobotCentricCommand = run(this::controllerDriveRobotCentric);
+  public Command controllerDriveRobotCentricCommand = run(this::controllerDriveRobotCentric).withName("driveControllerRobotCentric");
 
   /**
    * Updates current pose using encoder positions
@@ -413,11 +417,15 @@ public class DriveSubsystem extends SubsystemBase {
         Units.Meters.of(blEncoder.getDistance()),
         Units.Meters.of(brEncoder.getDistance())));
     field.setRobotPose(getPose());
-    if (limelightPose != null && limelightTimestamp != null && turretAngle != null && doUpdate != null && doUpdate.get()) {
-      Pose2d robotPose = Utilities.cameraToBot(limelightPose.get(), turretAngle.get(), gyro.getRotation2d());
-      field.getObject("limelight").setPose(robotPose);
-      poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
-      poseEstimator.addVisionMeasurement(robotPose, limelightTimestamp.getAsDouble());
+    if (limelightPoseSupplier != null && limelightTimestampSupplier != null && turretAngle != null && doUpdate != null
+        && doUpdate.get()) {
+      Pose2d robotPose = cameraToBot(limelightPoseSupplier.get());
+
+      field.getObject("limelight").setPose(limelightPoseSupplier.get());
+      poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
+      poseEstimator.addVisionMeasurement(robotPose, limelightTimestampSupplier.getAsDouble());
+    } else {
+      field.getObject("limelight").setPose(getEstimatedCameraPose());
     }
   }
 
@@ -426,7 +434,13 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void resetPos() {
-    poseEstimator.resetPose(new Pose2d(0.0, 0.0, Rotation2d.kZero));
+    Pose2d pose = new Pose2d(0.0, 0.0, Rotation2d.kZero);
+    poseEstimator.resetPose(pose);
+    gyro.setAngleAdjustment(
+        gyro.getAngleAdjustment()
+            + pose.getRotation().getDegrees() - gyro.getAngle()
+
+    );
   }
 
   public void voltageDrive() {
@@ -451,4 +465,140 @@ public class DriveSubsystem extends SubsystemBase {
     drive.driveCartesian(0, 0, 0);
   }
 
+  public Pose2d getFutureRobotPose2d(double dt) {
+    Pose2d pose = getPose();
+    ChassisSpeeds speeds = kinematics.toChassisSpeeds(new MecanumDriveWheelSpeeds(
+      flEncoder.getRate(), 
+      frEncoder.getRate(), 
+      blEncoder.getRate(), 
+      brEncoder.getRate()));
+    
+    Twist2d delta = speeds.toTwist2d(dt);
+
+    return pose.plus(new Transform2d(delta.dx, delta.dy, Rotation2d.fromRadians(delta.dtheta)));
+  }
+
+  public Pose2d botToTurret(Pose2d botPose) {
+    return botPose.transformBy(
+        new Transform2d(-Constants.CENTER_OF_BOT_TO_CENTER_OF_TURRET.in(Units.Meters), 0,
+            Rotation2d.k180deg));
+  }
+
+  public Pose2d botToCamera(Pose2d botPose) {
+    return botPose.transformBy(
+        new Transform2d(-Constants.CENTER_OF_BOT_TO_CENTER_OF_TURRET.in(Units.Meters), 0,
+            Rotation2d.fromDegrees(180 + turretSubsystem.getHeading())))
+        .transformBy(new Transform2d(Constants.TURRET_RADIUS.in(Units.Meters), 0, Rotation2d.kZero));
+
+  }
+  
+    public Pose2d getTurretPose() {
+      return botToTurret(getPose());
+    }
+
+  public Pose2d getEstimatedCameraPose() {
+    return botToCamera(getPose());
+  }
+
+  public Pose2d cameraToBot(Pose2d cameraPose) {
+    // Not using MT1 rotation
+
+    Rotation2d robotRot = getPose().getRotation();
+
+    return new Pose2d(
+        cameraPose.getTranslation().plus(
+            new Translation2d(Constants.TURRET_RADIUS.in(Units.Meters), 0)
+                .rotateBy(Rotation2d.fromDegrees(robotRot.getDegrees() + (turretSubsystem.getHeading()))))
+            .plus(new Translation2d(Constants.CENTER_OF_BOT_TO_CENTER_OF_TURRET.in(Units.Meters),
+                robotRot)),
+        robotRot);
+
+    // cameraPose.transformBy(new Transform2d(-Constants.TURRET_RADIUS.in(Meters),
+    // 0, robotAngle.plus(new Rotation2d(turretAngle))));
+    // return Pose2d.kZero;
+  }
+
+  // https://docs.wpilib.org/en/stable/docs/yearly-overview/2026-game-data.html
+  public boolean isHubActive() {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    // If we have no alliance, we cannot be enabled, therefore no hub.
+    if (alliance.isEmpty()) {
+      return false;
+    }
+    // Hub is always enabled in autonomous.
+    if (DriverStation.isAutonomousEnabled()) {
+      return true;
+    }
+    // At this point, if we're not teleop enabled, there is no hub.
+    if (!DriverStation.isTeleopEnabled()) {
+      return false;
+    }
+
+    // We're teleop enabled, compute.
+    double matchTime = DriverStation.getMatchTime();
+    String gameData = DriverStation.getGameSpecificMessage();
+    // If we have no game data, we cannot compute, assume hub is active, as its
+    // likely early in teleop.
+    if (gameData.isEmpty()) {
+      return true;
+    }
+    boolean redInactiveFirst = false;
+    switch (gameData.charAt(0)) {
+      case 'R' -> redInactiveFirst = true;
+      case 'B' -> redInactiveFirst = false;
+      default -> {
+        // If we have invalid game data, assume hub is active.
+        return true;
+      }
+    }
+
+    // Shift was is active for blue if red won auto, or red if blue won auto.
+    boolean shift1Active = switch (alliance.get()) {
+      case Red -> !redInactiveFirst;
+      case Blue -> redInactiveFirst;
+    };
+
+    if (matchTime > 130) {
+      // Transition shift, hub is active.
+      return true;
+    } else if (matchTime > 105) {
+      // Shift 1
+      return shift1Active;
+    } else if (matchTime > 80) {
+      // Shift 2
+      return !shift1Active;
+    } else if (matchTime > 55) {
+      // Shift 3
+      return shift1Active;
+    } else if (matchTime > 30) {
+      // Shift 4
+      return !shift1Active;
+    } else {
+      // End game, hub always active.
+      return true;
+    }
+  }
+
+  public double remainingHubSwitchTime() {
+    double matchTime = DriverStation.getMatchTime();
+    if (matchTime > 130) {
+      // Transition shift, hub is active.
+      return matchTime - 130;
+    } else if (matchTime > 105) {
+      // Shift 1
+      return matchTime - 105;
+    } else if (matchTime > 80) {
+      // Shift 2
+      return matchTime - 80;
+    } else if (matchTime > 55) {
+      // Shift 3
+      return matchTime - 55;
+    } else if (matchTime > 30) {
+      // Shift 4
+      return matchTime - 30;
+    } else {
+      // End game, hub always active.
+      return matchTime;
+    }
+  }
 }
