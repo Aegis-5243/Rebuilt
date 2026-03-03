@@ -116,8 +116,8 @@ public class RobotContainer {
         // .whileTrue(driveSubsystem.run(() -> driveSubsystem.voltageDrive()));
 
         // Drive field centric
-        // new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
-        // .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+        new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
+        .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
 
         // // Drive field centric facing origin
         // new Trigger(() ->
@@ -162,10 +162,13 @@ public class RobotContainer {
         new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand);
     }
 
+    public GenericEntry flightTimeEntry = Shuffleboard.getTab("Teleoperated").add("Flight Time", 1.0).getEntry();
+
     public Command faceHubCommand = Commands.run(() -> {
-        double angle = Kinematics
-                .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d(0.0004)))
-                .getRotation().getDegrees();
+        // double angle = Kinematics
+        //         .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
+        //         .getRotation().getDegrees();
+        double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(1.0)).getRotation().getDegrees();
         angle = MathUtil.clamp(angle, -90, 90);
 
         turretSubsystem.setTarget(angle);

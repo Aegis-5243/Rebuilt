@@ -44,6 +44,7 @@ import frc.lib.CustomMecanumDrive;
 import frc.lib.CustomMecanumDriveKinematics;
 import frc.robot.Constants;
 import frc.robot.shooter.TurretSubsystem;
+import frc.robot.utils.Kinematics;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -301,7 +302,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   public Command driveFieldCentricCommand(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier zRotation) {
     return run(
-        () -> driveFieldCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble()));
+        () -> driveFieldCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble())).withName("driveFieldCentric");
   }
 
   public void controllerDriveFieldCentric() {
@@ -322,7 +323,7 @@ public class DriveSubsystem extends SubsystemBase {
     driveFieldCentric(driveX, driveY, driveTurn);
   }
 
-  public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric);
+  public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric).withName("driveControllerFieldCentric");
 
   public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
     double driveX = Constants.controller.getDriveX();
@@ -405,7 +406,8 @@ public class DriveSubsystem extends SubsystemBase {
     driveRobotCentric(driveX, driveY, driveTurn);
   }
 
-  public Command controllerDriveRobotCentricCommand = run(this::controllerDriveRobotCentric).withName("driveControllerRobotCentric");
+  public Command controllerDriveRobotCentricCommand = run(this::controllerDriveRobotCentric)
+      .withName("driveControllerRobotCentric");
 
   /**
    * Updates current pose using encoder positions
@@ -465,39 +467,71 @@ public class DriveSubsystem extends SubsystemBase {
     drive.driveCartesian(0, 0, 0);
   }
 
+  /* Predicts future robot pose based on current velocities
+   * @param(dt) time in seconds to predict into the future, higher values are more unreliable as there is no smoothing or acceleration accounted for
+   * Note: this is a simple extrapolation and does not account for acceleration or changes in velocity
+   */
   public Pose2d getFutureRobotPose2d(double dt) {
     Pose2d pose = getPose();
     ChassisSpeeds speeds = kinematics.toChassisSpeeds(new MecanumDriveWheelSpeeds(
-      flEncoder.getRate(), 
-      frEncoder.getRate(), 
-      blEncoder.getRate(), 
-      brEncoder.getRate()));
-    
+        flEncoder.getRate(),
+        frEncoder.getRate(),
+        blEncoder.getRate(),
+        brEncoder.getRate()));
+
     Twist2d delta = speeds.toTwist2d(dt);
 
     return pose.plus(new Transform2d(delta.dx, delta.dy, Rotation2d.fromRadians(delta.dtheta)));
   }
 
+  /* Value of 0.0004s accounts for the delay with the turret, any more is erraneous */
+  public Pose2d getFutureRobotPose2d() {
+    return getFutureRobotPose2d(0.0004);
+  }
+
+  /* Gets the pose of the turret with the bots position */
   public Pose2d botToTurret(Pose2d botPose) {
     return botPose.transformBy(
         new Transform2d(-Constants.CENTER_OF_BOT_TO_CENTER_OF_TURRET.in(Units.Meters), 0,
             Rotation2d.k180deg));
   }
 
+  /* Transforms a bot pose to a camera pose */
   public Pose2d botToCamera(Pose2d botPose) {
     return botPose.transformBy(
         new Transform2d(-Constants.CENTER_OF_BOT_TO_CENTER_OF_TURRET.in(Units.Meters), 0,
             Rotation2d.fromDegrees(180 + turretSubsystem.getHeading())))
         .transformBy(new Transform2d(Constants.TURRET_RADIUS.in(Units.Meters), 0, Rotation2d.kZero));
-
   }
-  
-    public Pose2d getTurretPose() {
-      return botToTurret(getPose());
-    }
 
+  /* Gets the pose of the turret with the bots position */
+  public Pose2d getTurretPose() {
+    return botToTurret(getPose());
+  }
+
+  /* Gets the pose of the camera with the bots position and turret angle */
   public Pose2d getEstimatedCameraPose() {
     return botToCamera(getPose());
+  }
+
+  /* Extrapolates the instantaneous speed of the turret in m/s */
+  public Translation2d getTurretSpeed() {
+    Pose2d currentTurretPose = getTurretPose();
+    Pose2d futureTurretPose = botToTurret(getFutureRobotPose2d(0.05));
+    Translation2d deltaTranslation = futureTurretPose.getTranslation().minus(currentTurretPose.getTranslation());
+    return deltaTranslation.div(0.05);
+  }
+
+  /* Get the predicted hub location to aim at such that a ball with a given flight time will reach the hub */
+  public Translation2d getGhostHubTranslation2d(double flightTime) {
+    Translation2d turretSpeed = getTurretSpeed();
+    Translation2d hubTranslation2d = Kinematics.HUB_POSITION_2D.minus(turretSpeed.times(flightTime));
+    return hubTranslation2d;
+  }
+
+  /* Get predicted hub transform2d for a given flight time */
+  public Transform2d getPredictedHubTransform2d(double flightTime) {
+    return Kinematics.getHubTransform2d(botToTurret(getFutureRobotPose2d()), getGhostHubTranslation2d(flightTime));
   }
 
   public Pose2d cameraToBot(Pose2d cameraPose) {
