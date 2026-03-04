@@ -84,13 +84,12 @@ public final class Constants {
     public static final int KICKER = 23;
 
     public static final Map<Distance, Config> shooter_configs = Map.of(
-            Units.Inches.of(19.5 + 6.7175 + 23.25), new Config(4000, 0, 3000),
-            Units.Inches.of(32 + 6.7175 + 23.25), new Config(4250, 0, 3000),
-            Units.Inches.of(45 + 6.7175 + 23.25), new Config(4500, 0.3, 3000),
-            Units.Inches.of(56.5 + 6.7175 + 23.25), new Config(4500, 0.35, 3000),
-            Units.Inches.of(71.5 + 6.7175 + 23.25), new Config(4850, 0.4, 3000),
-            Units.Inches.of(83 + 6.7175 + 23.25), new Config(6000, 0.4, 5100),
-            Units.Meters.of(2.6), new Config(5000, 0.4, 3000));
+        Units.Meters.of(1.5), new Config(3750, 0, 3000),
+        Units.Meters.of(1.8), new Config(4175, 0.1, 3000),
+        Units.Meters.of(2.25), new Config(5750, 0.2, 3500),
+        Units.Meters.of(2.5), new Config(6000, 0.25, 3750),
+        Units.Meters.of(2.946), new Config(6000, 0.4, 4000)
+    );
 
 
     public static DriveController controller = new ProController(0);
