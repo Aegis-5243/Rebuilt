@@ -3,7 +3,6 @@ package frc.robot.utils;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Distance;
 import frc.robot.Constants;
-import frc.robot.Constants.Config;
 
 public class Utilites {
     public static Config distanceToConfig(Distance distance) {
@@ -15,5 +14,17 @@ public class Utilites {
         }
 
         return Constants.shooter_configs.get(closest);
+    }
+    
+    public static class Config {
+        public double shooter_rpm;
+        public double servo_pos;
+        public double kicker_rpm;
+
+        public Config(double shooter_rpm, double servo_pos, double kicker_rpm) {
+            this.shooter_rpm = shooter_rpm;
+            this.servo_pos = servo_pos;
+            this.kicker_rpm = kicker_rpm;
+        }
     }
 }

@@ -14,6 +14,8 @@ import com.revrobotics.spark.config.FeedForwardConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -25,14 +27,12 @@ public class RollerSubsystem extends SubsystemBase {
 
     /** Creates a new ExampleSubsystem. */
     public RollerSubsystem() {
-        // they are all following each other for now.
         roller = new SparkMax(Constants.ROLLER, MotorType.kBrushless);
-    
         kicker = new SparkMax(Constants.KICKER, MotorType.kBrushless);
 
         kicker.configure(new SparkMaxConfig().apply(new ClosedLoopConfig().pid(0.0001, 0, 0).apply(new FeedForwardConfig().kS(6))), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        kickerSpeed = Shuffleboard.getTab("roller").add("kicker-speed-setter", 0.5).getEntry();
+        kickerSpeed = Shuffleboard.getTab("roller").add("kicker-speed-setter", 3000).getEntry();
         Shuffleboard.getTab("roller").addDouble("kicker-rpm", () -> kicker.getEncoder().getVelocity());
 
 
@@ -43,10 +43,9 @@ public class RollerSubsystem extends SubsystemBase {
         kicker.set(speed);
     }
 
-    public void set(double rollerSpeed, double kickerSpeed) {
+    public void set(double rollerSpeed, AngularVelocity kickerSpeed) {
         roller.set(rollerSpeed);
-        // kicker.set(kickerSpeed);
-        kicker.getClosedLoopController().setSetpoint(-3000, ControlType.kVelocity);
+        kicker.getClosedLoopController().setSetpoint(-kickerSpeed.in(Units.RPM), ControlType.kVelocity);
     }
 
 

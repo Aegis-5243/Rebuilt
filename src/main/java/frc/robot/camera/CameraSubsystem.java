@@ -48,7 +48,6 @@ public class CameraSubsystem extends SubsystemBase {
         this.limelightPose = Pose2d.kZero;
         this.timestamp = 0;
         this.rejectUpdate = true;
-        // TODO CHANGE TO TRUE WHEn REAFDY
         this.doPoseEstimation = true;
         megatag2 = Shuffleboard.getTab("camera").add("megatag2", true).getEntry();
         Shuffleboard.getTab("camera").addDouble("tx", () -> getThetaDiff());
@@ -138,7 +137,6 @@ public class CameraSubsystem extends SubsystemBase {
     public void periodic() {
         if (this.doPoseEstimation) {
             updateVisionPose();
-            // translatePose();
         }
         // This method will be called once per scheduler run
     }

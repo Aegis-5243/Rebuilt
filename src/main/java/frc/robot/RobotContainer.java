@@ -8,18 +8,15 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardComponent;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Constants.Config;
 import frc.robot.camera.CameraSubsystem;
 import frc.robot.drive.DriveSubsystem;
 import frc.robot.intake.IntakeSubsystem;
@@ -28,7 +25,6 @@ import frc.robot.shooter.RollerSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
 import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.Kinematics;
-import frc.robot.utils.LimelightHelpers;
 import frc.robot.utils.Utilites;
 
 /**
@@ -66,7 +62,8 @@ public class RobotContainer {
             rollerSubsystem.set(0);
         }).withName("rollerDefault"));
         intakeSubsystem
-                .setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0)).withName("intakeDefault"));
+                .setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0))
+                        .withName("intakeDefault"));
         // hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() ->
         // hoodSubsystem.setPos(MathUtil
         // .clamp(hoodSubsystem.primaryHoodServo.get() +
@@ -109,16 +106,6 @@ public class RobotContainer {
      * joysticks}.
      */
     private void configureBindings() {
-        // temp binds for drivetrain characterization
-        // new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
-        // .whileTrue(driveSubsystem.sysId.quasistatic(Direction.kForward));
-        // new Trigger(() ->
-        // Constants.controller.getDriveFieldCentricFacingOriginMode())
-        // .whileTrue(driveSubsystem.sysId.quasistatic(Direction.kReverse));
-        // new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
-        // .whileTrue(driveSubsystem.sysId.dynamic(Direction.kForward));
-        // new Trigger(() -> Constants.controller.getResetPoseButton())
-        // .whileTrue(driveSubsystem.sysId.dynamic(Direction.kReverse));
         new Trigger(() -> Constants.controller.getResetPoseButton())
                 .onTrue(Commands.runOnce(() -> driveSubsystem.resetPos()));
         // .whileTrue(driveSubsystem.run(() -> driveSubsystem.voltageDrive()));
@@ -135,18 +122,30 @@ public class RobotContainer {
 
         new Trigger(() -> Constants.controller.allShoot()).whileTrue(
                 new ParallelCommandGroup(
-                        shooterSubsystem.run(() -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
-                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
-                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).shooter_rpm))),
+                        shooterSubsystem.run(
+                                () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+                                        .distanceToConfig(Units.Meters.of(
+                                                Kinematics.HUB_POSITION_2D
+                                                        .getDistance(driveSubsystem
+                                                                .botToTurret(driveSubsystem
+                                                                        .getPose())
+                                                                .getTranslation()))).shooter_rpm))),
                         new SequentialCommandGroup(
                                 new WaitCommand(.3),
                                 rollerSubsystem.run(() -> rollerSubsystem.set(.5,
-                                        Utilites.distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D
-                                                .getDistance(driveSubsystem.botToTurret(driveSubsystem.getPose())
-                                                        .getTranslation()))).kicker_duty_cycle))),
+                                        Units.RPM.of(Utilites.distanceToConfig(Units.Meters
+                                                .of(Kinematics.HUB_POSITION_2D
+                                                        .getDistance(driveSubsystem
+                                                                .botToTurret(driveSubsystem
+                                                                        .getPose())
+                                                                .getTranslation()))).kicker_rpm)))),
                         hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
-                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
-                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).servo_pos)),
+                                .distanceToConfig(Units.Meters.of(
+                                        Kinematics.HUB_POSITION_2D.getDistance(
+                                                driveSubsystem
+                                                        .botToTurret(driveSubsystem
+                                                                .getPose())
+                                                        .getTranslation()))).servo_pos)),
                         faceHubCommand()));
 
         // // Drive field centric snapping
@@ -177,11 +176,13 @@ public class RobotContainer {
 
         new Trigger(() -> Constants.controller.getRoller()).whileTrue(
                 rollerSubsystem.runEnd(() -> {
-                    rollerSubsystem.set(.5, rollerSubsystem.kickerSpeed.getDouble(0.5));
+                    rollerSubsystem.set(.5,
+                            Units.RPM.of(rollerSubsystem.kickerSpeed.getDouble(3000)));
                 }, () -> rollerSubsystem.set(0)));
 
         new Trigger(() -> Constants.controller.getIntake()).whileTrue(
-                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.9), () -> intakeSubsystem.intake.set(0)));
+                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.9),
+                        () -> intakeSubsystem.intake.set(0)));
 
         new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand());
     }
@@ -193,7 +194,8 @@ public class RobotContainer {
             // double angle = Kinematics
             // .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
             // .getRotation().getDegrees();
-            double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0)).getRotation()
+            double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0))
+                    .getRotation()
                     .getDegrees();
             angle = MathUtil.clamp(angle, -90, 90);
 
@@ -207,24 +209,42 @@ public class RobotContainer {
         // 0.0)
         // .withDeadline(Commands.waitSeconds(1));
         return new SequentialCommandGroup(
-                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0, 0.25 * driveSubsystem.getMaxSpeed()))
+                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0,
+                        0.25 * driveSubsystem.getMaxSpeed()))
                         .onlyWhile(() -> Double.isNaN(cameraSubsystem.getThetaDiff())),
                 new ParallelCommandGroup(
-                        shooterSubsystem.run(() -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
-                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
-                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).shooter_rpm))),
+                        shooterSubsystem.run(
+                                () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+                                        .distanceToConfig(Units.Meters.of(
+                                                Kinematics.HUB_POSITION_2D
+                                                        .getDistance(driveSubsystem
+                                                                .botToTurret(driveSubsystem
+                                                                        .getPose())
+                                                                .getTranslation()))).shooter_rpm))),
                         new SequentialCommandGroup(
                                 new WaitCommand(1.5),
                                 new ParallelDeadlineGroup(
                                         new WaitCommand(3),
-                                        rollerSubsystem.run(() -> rollerSubsystem.set(.5,
-                                                Utilites.distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D
-                                                        .getDistance(
-                                                                driveSubsystem.botToTurret(driveSubsystem.getPose())
-                                                                        .getTranslation()))).kicker_duty_cycle)))),
+                                        rollerSubsystem.run(
+                                                () -> rollerSubsystem
+                                                        .set(.5,
+                                                                Units.RPM.of(Utilites
+                                                                        .distanceToConfig(
+                                                                                Units.Meters
+                                                                                        .of(Kinematics.HUB_POSITION_2D
+                                                                                                .getDistance(
+                                                                                                        driveSubsystem
+                                                                                                                .botToTurret(
+                                                                                                                        driveSubsystem
+                                                                                                                                .getPose())
+                                                                                                                .getTranslation()))).kicker_rpm))))),
                         hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
-                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
-                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).servo_pos)),
+                                .distanceToConfig(Units.Meters.of(
+                                        Kinematics.HUB_POSITION_2D.getDistance(
+                                                driveSubsystem
+                                                        .botToTurret(driveSubsystem
+                                                                .getPose())
+                                                        .getTranslation()))).servo_pos)),
                         faceHubCommand(),
                         intakeSubsystem.run(() -> intakeSubsystem.intake.set(.9))));
         // return Autos.exampleAuto(m_driveSubsystem);

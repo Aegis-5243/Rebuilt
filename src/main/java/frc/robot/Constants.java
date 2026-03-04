@@ -6,15 +6,11 @@ package frc.robot;
 
 import java.util.Map;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.controllers.DriveController;
 import frc.robot.controllers.ProController;
+import frc.robot.utils.Utilites.Config;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -49,25 +45,26 @@ public final class Constants {
 
     public static final Distance WHEEL_DIAMETER = Units.Inches.of(6);
     /*** meters per revolution */
-    public static final double WHEEL_DISTANCE_PER_MOTOR_REV = Math.PI * WHEEL_DIAMETER.in(Units.Meters) / DRIVE_GEARBOX_RATIO;
+    public static final double WHEEL_DISTANCE_PER_MOTOR_REV = Math.PI * WHEEL_DIAMETER.in(Units.Meters)
+            / DRIVE_GEARBOX_RATIO;
     /*** meters per encoder pulse */
-    public static final double WHEEL_DISTANCE_PER_PULSE = Math.PI * Constants.WHEEL_DIAMETER.in(Units.Meters) / Constants.ENCODER_CYCLES_PER_REV;
+    public static final double WHEEL_DISTANCE_PER_PULSE = Math.PI * Constants.WHEEL_DIAMETER.in(Units.Meters)
+            / Constants.ENCODER_CYCLES_PER_REV;
 
     /*** Meters per second */
     public static final double DRIVE_MAX_SPEED = 2.0;
     /*** Meters per second squared */
     public static final double DRIVE_MAX_ACCELERATION = 10.0;
 
-
     public static final int TURRET_MOTOR = 41;
     /*** Degrees per revolution */
-    public static final double TURRET_DEGREES_PER_REV = 7.875;//(5.0 / 24.0) * 360;
+    public static final double TURRET_DEGREES_PER_REV = 7.875;
     /*** Distance between center of turret and limelight lens */
     public static final Distance TURRET_RADIUS = Units.Inches.of(7.5);
     public static final Distance CENTER_OF_BOT_TO_CENTER_OF_TURRET = Units.Inches.of(8.5);
     public static final String TURRET_LIMELIGHT = "";
 
-    //limelight hight 19.25
+    // limelight hight 19.25
     // pitch 28.725 degress
 
     public static final int PRIMARY_SHOOTER = 31;
@@ -77,38 +74,24 @@ public final class Constants {
     public static final double SHOOTER_kI = 0;
     public static final double SHOOTER_kD = 0;
     public static final double SHOOTER_kF = 10;
-    
+
     public static final double SHOOTER_kA = 0;
     public static final double SHOOTER_kS = 0;
     public static final double SHOOTER_kV = 0;
-
 
     public static final int ROLLER = 22;
     public static final int INTAKE = 21;
     public static final int KICKER = 23;
 
-    public static Map<Distance, Config> shooter_configs = Map.of(
-        Units.Inches.of(19.5 + 6.7175 + 23.25), new Config(4000, 0, .5),
-        Units.Inches.of(32 + 6.7175 + 23.25), new Config(4250, 0, .5),
-        Units.Inches.of(45 + 6.7175 + 23.25), new Config(4500, 0.3, .5),
-        Units.Inches.of(56.5 + 6.7175 + 23.25), new Config(4500, 0.35, .5),
-        Units.Inches.of(71.5 + 6.7175 + 23.25), new Config(4850, 0.4, .5),
-        Units.Inches.of(83 + 6.7175 + 23.25), new Config(6000, 0.4, 0.85),
-        Units.Meters.of(2.6), new Config(5000, 0.4, 0.5)
-    );
+    public static final Map<Distance, Config> shooter_configs = Map.of(
+            Units.Inches.of(19.5 + 6.7175 + 23.25), new Config(4000, 0, 3000),
+            Units.Inches.of(32 + 6.7175 + 23.25), new Config(4250, 0, 3000),
+            Units.Inches.of(45 + 6.7175 + 23.25), new Config(4500, 0.3, 3000),
+            Units.Inches.of(56.5 + 6.7175 + 23.25), new Config(4500, 0.35, 3000),
+            Units.Inches.of(71.5 + 6.7175 + 23.25), new Config(4850, 0.4, 3000),
+            Units.Inches.of(83 + 6.7175 + 23.25), new Config(6000, 0.4, 5100),
+            Units.Meters.of(2.6), new Config(5000, 0.4, 3000));
 
-
-    public static class Config {
-        public double shooter_rpm;
-        public double servo_pos;
-        public double kicker_duty_cycle;
-
-        public Config(double shooter_rpm, double servo_pos, double kicker_duty_cycle) {
-            this.shooter_rpm = shooter_rpm;
-            this.servo_pos = servo_pos;
-            this.kicker_duty_cycle = kicker_duty_cycle;
-    }
-    }
 
     public static DriveController controller = new ProController(0);
 
