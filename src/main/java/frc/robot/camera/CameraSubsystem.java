@@ -51,6 +51,7 @@ public class CameraSubsystem extends SubsystemBase {
         // TODO CHANGE TO TRUE WHEn REAFDY
         this.doPoseEstimation = true;
         megatag2 = Shuffleboard.getTab("camera").add("megatag2", true).getEntry();
+        Shuffleboard.getTab("camera").addDouble("tx", () -> getThetaDiff());
         // turretLimelight = new HttpCamera("turret_limelight", "10.52.43.11:5800");
 
         // Shuffleboard.getTab("camera").add(turretLimelight);
@@ -63,9 +64,9 @@ public class CameraSubsystem extends SubsystemBase {
         if (useMegaTag2 == false) {
             LimelightHelpers.PoseEstimate mt1;
             if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
-                mt1 = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2("limelight");
+                mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
             else
-                mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+                mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
 
             if (mt1.tagCount == 1 && mt1.rawFiducials.length == 1) {
                 if (mt1.rawFiducials[0].ambiguity > .7) {
@@ -86,7 +87,9 @@ public class CameraSubsystem extends SubsystemBase {
             this.rejectUpdate = doRejectUpdate;
         } else if (useMegaTag2 == true) {
             // double angle = driveSubsystem.getPose().getRotation().getDegrees() + 180;
-            double angle = driveSubsystem.getEstimatedCameraPose().getRotation().getDegrees() + 180;
+            double angle = driveSubsystem.getEstimatedCameraPose().getRotation().getDegrees();
+            if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
+            angle += 180;
 
             LimelightHelpers.SetRobotOrientation("limelight",
                     angle, 0, 0, 0, 0, 0);

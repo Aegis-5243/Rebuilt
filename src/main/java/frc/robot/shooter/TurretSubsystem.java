@@ -63,7 +63,7 @@ public class TurretSubsystem extends SubsystemBase {
                                 .reverseSoftLimit(-90).reverseSoftLimitEnabled(true)),
                 ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        colorSensor = new ColorSensorV3(I2C.Port.kOnboard);
+        colorSensor = new ColorSensorV3(I2C.Port.kMXP);
 
         temp = new WrappingDutyCycleEncoder(9, turretEncoder::getVelocity, 0, true);
         limitSwitch = new DigitalInput(8);

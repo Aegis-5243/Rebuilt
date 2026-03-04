@@ -68,4 +68,6 @@ public interface DriveController {
     public double getHoodDisplacement();
 
     public double getTurretDisplacement();
+
+    public boolean allShoot();
 }

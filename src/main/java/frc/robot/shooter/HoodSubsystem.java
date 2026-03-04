@@ -4,6 +4,7 @@
 
 package frc.robot.shooter;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -15,9 +16,12 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 
 public class HoodSubsystem extends SubsystemBase { 
-    public Servo primaryHoodServo;
-    public Servo secondaryHoodServo;
+    private Servo primaryHoodServo;
+    private Servo secondaryHoodServo;
     public GenericEntry hoodSetpoint;
+
+    private double minVal = 0.2;
+    private double maxVal = 0.68;
 
     /** Creates a new ExampleSubsystem. */
     public HoodSubsystem() {
@@ -34,8 +38,13 @@ public class HoodSubsystem extends SubsystemBase {
      * @param position Position between 0.0 and 1.0
      */
     public void setPos(double position) {
+        position = MathUtil.clamp(position * (maxVal - minVal) + minVal, minVal, maxVal);
         primaryHoodServo.set(position);
         secondaryHoodServo.set(position);
+    }
+
+    public double getPos() {
+        return (primaryHoodServo.get() - minVal) / (maxVal - minVal);
     }
 
     /**

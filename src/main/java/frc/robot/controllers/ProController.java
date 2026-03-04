@@ -66,19 +66,19 @@ public class ProController implements DriveController {
     @Override
     public boolean getShoot() {
         // return controller.getAButton();
-        return controller.getRightTriggerAxis() > 0.6 || controller.getBButton();
+        return controller.getRightTriggerAxis() > 0.6;// || controller.getBButton();
     }
 
     @Override
     public boolean getIntake() {
-        return controller.getLeftBumperButton() || controller.getBButton();
+        return controller.getLeftBumperButton();// || controller.getBButton();
         // return controller.getXButton();
     }
 
     @Override
     public boolean getRoller() {
         // return controller.getYButton();
-        return controller.getRightBumperButton() || controller.getBButton();
+        return controller.getRightBumperButton();// || controller.getBButton();
     }
 
     @Override
@@ -101,5 +101,10 @@ public class ProController implements DriveController {
         else if (res == 270)
             return 1;
         return 0;
+    }
+
+    @Override
+    public boolean allShoot() {
+        return controller.getAButton();
     }
 }

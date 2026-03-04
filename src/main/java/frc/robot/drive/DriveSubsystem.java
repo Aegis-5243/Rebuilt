@@ -4,7 +4,9 @@
 
 package frc.robot.drive;
 
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -77,6 +79,9 @@ public class DriveSubsystem extends SubsystemBase {
   public DoubleSupplier limelightTimestampSupplier;
   public Supplier<Angle> turretAngle;
   public Supplier<Boolean> doUpdate;
+  public Supplier<Boolean> limelightMt2Supplier;
+
+  private GenericEntry temp;
 
   private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
 
@@ -237,12 +242,18 @@ public class DriveSubsystem extends SubsystemBase {
     tab.add("frEncoder", frEncoder);
     tab.add("blEncoder", blEncoder);
     tab.add("brEncoder", brEncoder);
-
+    tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
     tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
     tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
     tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
     tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
-    volts = tab.add("drive-voltage", 0).getEntry();
+
+    tab.addDouble("Shiftt Time Remains", () -> remainingHubSwitchTime());
+    tab.addBoolean("Hub active", () -> isHubActive());
+
+    tab.addDouble("dist_to_hub",
+        () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
+    // temp = tab.add("", Constants.shooter_configs).getEntry();
 
     field = new Field2d();
     tab.add("Field", field);
@@ -264,6 +275,10 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void setLimelightUpdateSupplier(Supplier<Boolean> supplier) {
     doUpdate = supplier;
+  }
+
+  public void setLimelightMt2Supplier(Supplier<Boolean> limelightMt2Supplier) {
+    this.limelightMt2Supplier = limelightMt2Supplier;
   }
 
   public void setPoseToCam() {
@@ -302,7 +317,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   public Command driveFieldCentricCommand(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier zRotation) {
     return run(
-        () -> driveFieldCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble())).withName("driveFieldCentric");
+        () -> driveFieldCentric(xSpeed.getAsDouble(), ySpeed.getAsDouble(), zRotation.getAsDouble()))
+        .withName("driveFieldCentric");
   }
 
   public void controllerDriveFieldCentric() {
@@ -323,7 +339,8 @@ public class DriveSubsystem extends SubsystemBase {
     driveFieldCentric(driveX, driveY, driveTurn);
   }
 
-  public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric).withName("driveControllerFieldCentric");
+  public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric)
+      .withName("driveControllerFieldCentric");
 
   public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
     double driveX = Constants.controller.getDriveX();
@@ -421,10 +438,18 @@ public class DriveSubsystem extends SubsystemBase {
     field.setRobotPose(getPose());
     if (limelightPoseSupplier != null && limelightTimestampSupplier != null && turretAngle != null && doUpdate != null
         && doUpdate.get()) {
-      Pose2d robotPose = cameraToBot(limelightPoseSupplier.get());
+      Pose2d robotPose;
 
       field.getObject("limelight").setPose(limelightPoseSupplier.get());
-      poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
+
+      double visionRotStdev = 9999999;
+      if (limelightMt2Supplier != null && limelightMt2Supplier.get() == false) {
+        visionRotStdev = 2;
+        robotPose = cameraToBotRaw(limelightPoseSupplier.get());
+      } else {
+        robotPose = cameraToBot(limelightPoseSupplier.get());
+      }
+      poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, visionRotStdev));
       poseEstimator.addVisionMeasurement(robotPose, limelightTimestampSupplier.getAsDouble());
     } else {
       field.getObject("limelight").setPose(getEstimatedCameraPose());
@@ -440,9 +465,9 @@ public class DriveSubsystem extends SubsystemBase {
     poseEstimator.resetPose(pose);
     gyro.setAngleAdjustment(
         gyro.getAngleAdjustment()
-            + pose.getRotation().getDegrees() - gyro.getAngle()
+            + pose.getRotation().getDegrees() - gyro.getAngle());
 
-    );
+    currentVelocity = new Transform2d();
   }
 
   public void voltageDrive() {
@@ -456,6 +481,7 @@ public class DriveSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     updatePose();
+    updateVelocity();
   }
 
   @Override
@@ -467,10 +493,37 @@ public class DriveSubsystem extends SubsystemBase {
     drive.driveCartesian(0, 0, 0);
   }
 
-  /* Predicts future robot pose based on current velocities
-   * @param(dt) time in seconds to predict into the future, higher values are more unreliable as there is no smoothing or acceleration accounted for
-   * Note: this is a simple extrapolation and does not account for acceleration or changes in velocity
+  /*
+   * Predicts future robot pose based on current velocities
+   * 
+   * @param(dt) time in seconds to predict into the future, higher values are more
+   * unreliable as there is no smoothing or acceleration accounted for
+   * Note: this is a simple extrapolation and does not account for acceleration or
+   * changes in velocity
    */
+
+  Transform2d currentVelocity = new Transform2d();
+
+  private void updateVelocity() {
+    ChassisSpeeds speeds = kinematics.toChassisSpeeds(new MecanumDriveWheelSpeeds(
+        flEncoder.getRate(),
+        frEncoder.getRate(),
+        blEncoder.getRate(),
+        brEncoder.getRate()));
+
+    double inter = 0.1;
+
+    currentVelocity = new Transform2d(
+        MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(), inter),
+        MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(), inter),
+        Rotation2d.fromRadians(
+            MathUtil.interpolate(speeds.omegaRadiansPerSecond, currentVelocity.getRotation().getRadians(), inter)));
+  }
+
+  public Transform2d getVelocity() {
+    return currentVelocity;
+  }
+
   public Pose2d getFutureRobotPose2d(double dt) {
     Pose2d pose = getPose();
     ChassisSpeeds speeds = kinematics.toChassisSpeeds(new MecanumDriveWheelSpeeds(
@@ -484,7 +537,14 @@ public class DriveSubsystem extends SubsystemBase {
     return pose.plus(new Transform2d(delta.dx, delta.dy, Rotation2d.fromRadians(delta.dtheta)));
   }
 
-  /* Value of 0.0004s accounts for the delay with the turret, any more is erraneous */
+  public Pose2d getSmoothFutureRobotPose2d(double dt) {
+    return getPose().transformBy(getVelocity().times(dt));
+  }
+
+  /*
+   * Value of 0.0004s accounts for the delay with the turret, any more is
+   * erraneous
+   */
   public Pose2d getFutureRobotPose2d() {
     return getFutureRobotPose2d(0.0004);
   }
@@ -517,12 +577,15 @@ public class DriveSubsystem extends SubsystemBase {
   /* Extrapolates the instantaneous speed of the turret in m/s */
   public Translation2d getTurretSpeed() {
     Pose2d currentTurretPose = getTurretPose();
-    Pose2d futureTurretPose = botToTurret(getFutureRobotPose2d(0.05));
+    Pose2d futureTurretPose = botToTurret(getSmoothFutureRobotPose2d(0.05));
     Translation2d deltaTranslation = futureTurretPose.getTranslation().minus(currentTurretPose.getTranslation());
     return deltaTranslation.div(0.05);
   }
 
-  /* Get the predicted hub location to aim at such that a ball with a given flight time will reach the hub */
+  /*
+   * Get the predicted hub location to aim at such that a ball with a given flight
+   * time will reach the hub
+   */
   public Translation2d getGhostHubTranslation2d(double flightTime) {
     Translation2d turretSpeed = getTurretSpeed();
     Translation2d hubTranslation2d = Kinematics.HUB_POSITION_2D.minus(turretSpeed.times(flightTime));
@@ -532,6 +595,18 @@ public class DriveSubsystem extends SubsystemBase {
   /* Get predicted hub transform2d for a given flight time */
   public Transform2d getPredictedHubTransform2d(double flightTime) {
     return Kinematics.getHubTransform2d(botToTurret(getFutureRobotPose2d()), getGhostHubTranslation2d(flightTime));
+  }
+
+  public Pose2d cameraToBotRaw(Pose2d cameraPose) {
+    return cameraPose
+        .transformBy(new Transform2d(
+            -Constants.TURRET_RADIUS.in(Units.Meters),
+            0,
+            Rotation2d.fromDegrees(-turretSubsystem.getHeading())))
+        .transformBy(new Transform2d(
+            -Constants.CENTER_OF_BOT_TO_CENTER_OF_TURRET.in(Units.Meters),
+            0,
+            Rotation2d.k180deg));
   }
 
   public Pose2d cameraToBot(Pose2d cameraPose) {

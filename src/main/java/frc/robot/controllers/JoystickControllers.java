@@ -85,4 +85,10 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'getTurretDisplacement'");
     }
 
+    @Override
+    public boolean allShoot() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'allShoot'");
+    }
+
 }

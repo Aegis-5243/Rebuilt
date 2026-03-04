@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.Map;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -84,6 +86,29 @@ public final class Constants {
     public static final int ROLLER = 22;
     public static final int INTAKE = 21;
     public static final int KICKER = 23;
+
+    public static Map<Distance, Config> shooter_configs = Map.of(
+        Units.Inches.of(19.5 + 6.7175 + 23.25), new Config(4000, 0, .5),
+        Units.Inches.of(32 + 6.7175 + 23.25), new Config(4250, 0, .5),
+        Units.Inches.of(45 + 6.7175 + 23.25), new Config(4500, 0.3, .5),
+        Units.Inches.of(56.5 + 6.7175 + 23.25), new Config(4500, 0.35, .5),
+        Units.Inches.of(71.5 + 6.7175 + 23.25), new Config(4850, 0.4, .5),
+        Units.Inches.of(83 + 6.7175 + 23.25), new Config(6000, 0.4, 0.85),
+        Units.Meters.of(2.6), new Config(5000, 0.4, 0.5)
+    );
+
+
+    public static class Config {
+        public double shooter_rpm;
+        public double servo_pos;
+        public double kicker_duty_cycle;
+
+        public Config(double shooter_rpm, double servo_pos, double kicker_duty_cycle) {
+            this.shooter_rpm = shooter_rpm;
+            this.servo_pos = servo_pos;
+            this.kicker_duty_cycle = kicker_duty_cycle;
+    }
+    }
 
     public static DriveController controller = new ProController(0);
 

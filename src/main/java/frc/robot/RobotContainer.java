@@ -13,8 +13,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.Config;
 import frc.robot.camera.CameraSubsystem;
 import frc.robot.drive.DriveSubsystem;
 import frc.robot.intake.IntakeSubsystem;
@@ -23,6 +28,8 @@ import frc.robot.shooter.RollerSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
 import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.Kinematics;
+import frc.robot.utils.LimelightHelpers;
+import frc.robot.utils.Utilites;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -79,6 +86,7 @@ public class RobotContainer {
         driveSubsystem.setLimelightTimestampSupplier(() -> cameraSubsystem.timestamp);
         driveSubsystem.setTurretAngleSupplier(() -> Units.Degrees.of(turretSubsystem.getHeading()));
         driveSubsystem.setLimelightUpdateSupplier(() -> !cameraSubsystem.rejectUpdate);
+        driveSubsystem.setLimelightMt2Supplier(() -> cameraSubsystem.megatag2.getBoolean(true));
 
         Shuffleboard.getTab("Teleoperated").add("CS", CommandScheduler.getInstance());
 
@@ -117,7 +125,7 @@ public class RobotContainer {
 
         // Drive field centric
         new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
-        .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+                .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
 
         // // Drive field centric facing origin
         // new Trigger(() ->
@@ -125,13 +133,29 @@ public class RobotContainer {
         // .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() ->
         // 0, () -> 0));
 
+        new Trigger(() -> Constants.controller.allShoot()).whileTrue(
+                new ParallelCommandGroup(
+                        shooterSubsystem.run(() -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
+                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).shooter_rpm))),
+                        new SequentialCommandGroup(
+                                new WaitCommand(.3),
+                                rollerSubsystem.run(() -> rollerSubsystem.set(.5,
+                                        Utilites.distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D
+                                                .getDistance(driveSubsystem.botToTurret(driveSubsystem.getPose())
+                                                        .getTranslation()))).kicker_duty_cycle))),
+                        hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
+                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
+                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).servo_pos)),
+                        faceHubCommand()));
+
         // // Drive field centric snapping
         // new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
         // .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
 
         // // Reset pose to origin
-        new Trigger(() -> Constants.controller.getResetPoseButton())
-                .onTrue(Commands.runOnce(driveSubsystem::setPoseToCam));
+        // new Trigger(() -> Constants.controller.getResetPoseButton())
+        // .onTrue(Commands.runOnce(driveSubsystem::setPoseToCam));
 
         // // Align to origin pose with deceleration
         // new Trigger(() -> Constants.controller.getAlignToOriginPoseButton())
@@ -159,27 +183,50 @@ public class RobotContainer {
         new Trigger(() -> Constants.controller.getIntake()).whileTrue(
                 intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.9), () -> intakeSubsystem.intake.set(0)));
 
-        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand);
+        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand());
     }
 
-    public GenericEntry flightTimeEntry = Shuffleboard.getTab("Teleoperated").add("Flight Time", 1.0).getEntry();
+    public GenericEntry flightTimeEntry = Shuffleboard.getTab("Teleoperated").add("Flight Time", 0).getEntry();
 
-    public Command faceHubCommand = Commands.run(() -> {
-        // double angle = Kinematics
-        //         .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
-        //         .getRotation().getDegrees();
-        double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(1.0)).getRotation().getDegrees();
-        angle = MathUtil.clamp(angle, -90, 90);
+    public Command faceHubCommand() {
+        return Commands.run(() -> {
+            // double angle = Kinematics
+            // .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
+            // .getRotation().getDegrees();
+            double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0)).getRotation()
+                    .getDegrees();
+            angle = MathUtil.clamp(angle, -90, 90);
 
-        turretSubsystem.setTarget(angle);
-    }, turretSubsystem);
+            turretSubsystem.setTarget(angle);
+        }, turretSubsystem);
+    }
 
     public Command getAutonomousCommand() {
         // An example command will be run in autonomous
         // return driveSubsystem.driveRobotCentricCommand(() -> 1.0, () -> 0.0, () ->
         // 0.0)
         // .withDeadline(Commands.waitSeconds(1));
-        return new InstantCommand();
+        return new SequentialCommandGroup(
+                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0, 0.25 * driveSubsystem.getMaxSpeed()))
+                        .onlyWhile(() -> Double.isNaN(cameraSubsystem.getThetaDiff())),
+                new ParallelCommandGroup(
+                        shooterSubsystem.run(() -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
+                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).shooter_rpm))),
+                        new SequentialCommandGroup(
+                                new WaitCommand(1.5),
+                                new ParallelDeadlineGroup(
+                                        new WaitCommand(3),
+                                        rollerSubsystem.run(() -> rollerSubsystem.set(.5,
+                                                Utilites.distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D
+                                                        .getDistance(
+                                                                driveSubsystem.botToTurret(driveSubsystem.getPose())
+                                                                        .getTranslation()))).kicker_duty_cycle)))),
+                        hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
+                                .distanceToConfig(Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(driveSubsystem
+                                        .botToTurret(driveSubsystem.getPose()).getTranslation()))).servo_pos)),
+                        faceHubCommand(),
+                        intakeSubsystem.run(() -> intakeSubsystem.intake.set(.9))));
         // return Autos.exampleAuto(m_driveSubsystem);
     }
 }
