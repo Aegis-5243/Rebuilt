@@ -4,62 +4,249 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
-import frc.robot.commands.Autos;
-import frc.robot.commands.DriveCommand;
-import frc.robot.subsystems.DriveSubsystem;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.camera.CameraSubsystem;
+import frc.robot.drive.DriveSubsystem;
+import frc.robot.intake.IntakeSubsystem;
+import frc.robot.shooter.HoodSubsystem;
+import frc.robot.shooter.RollerSubsystem;
+import frc.robot.shooter.ShooterSubsystem;
+import frc.robot.shooter.TurretSubsystem;
+import frc.robot.utils.Kinematics;
+import frc.robot.utils.Utilites;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
+ * This class is where the bulk of the robot should be declared. Since
+ * Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in
+ * the {@link Robot}
+ * periodic methods (other than the scheduler calls). Instead, the structure of
+ * the robot (including
  * subsystems, commands, and trigger mappings) should be declared here.
  */
 public class RobotContainer {
-  // The robot's subsystems and commands are defined here...
-  private final DriveSubsystem m_exampleSubsystem = new DriveSubsystem();
-  private final DriveCommand m_driveCommand = new DriveCommand(m_exampleSubsystem);
+    // The robot's subsystems and commands are defined here...
+    private final TurretSubsystem turretSubsystem = new TurretSubsystem();
+    private final DriveSubsystem driveSubsystem = new DriveSubsystem(turretSubsystem);
+    private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
+    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+    private final RollerSubsystem rollerSubsystem = new RollerSubsystem();
+    private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+    private final CameraSubsystem cameraSubsystem = new CameraSubsystem(driveSubsystem);
+    // private final CameraSubsystem cameraSubsystem = new
+    // CameraSubsystem(driveSubsystem::getPose,
+    // () -> driveSubsystem.gyro.getAngle(), () ->
+    // Units.DegreesPerSecond.of(driveSubsystem.gyro.getRate()));
 
-  // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController m_driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+    /**
+     * The container for the robot. Contains subsystems, OI devices, and commands.
+     */
+    public RobotContainer() {
+        driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
+        shooterSubsystem.setDefaultCommand(shooterSubsystem.run(() -> {
+            shooterSubsystem.setDutyCycle(0);
+        }).withName("shooterDefault"));
+        rollerSubsystem.setDefaultCommand(rollerSubsystem.run(() -> {
+            rollerSubsystem.set(0);
+        }).withName("rollerDefault"));
+        intakeSubsystem
+                .setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0))
+                        .withName("intakeDefault"));
+        // hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() ->
+        // hoodSubsystem.setPos(MathUtil
+        // .clamp(hoodSubsystem.primaryHoodServo.get() +
+        // Constants.controller.getHoodDisplacement() * 0.05, 0,
+        // 1)))
+        // .withName("hoodDefault"));
+        hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() -> hoodSubsystem.setPos(MathUtil
+                .clamp(hoodSubsystem.hoodSetpoint.getDouble(0), 0,
+                        1)))
+                .withName("hoodDefault"));
+        turretSubsystem.setDefaultCommand(turretSubsystem.run(() -> {
+            turretSubsystem.setPower(Constants.controller.getTurretDisplacement() * 0.2);
+        }).withName("turretDefault"));
+        CommandScheduler.getInstance().registerSubsystem(cameraSubsystem);
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer() {
-    m_exampleSubsystem.setDefaultCommand(m_driveCommand);
-    // Configure the trigger bindings
-    configureBindings();
-  }
+        driveSubsystem.setLimelightPoseSupplier(cameraSubsystem::getPose);
+        driveSubsystem.setLimelightTimestampSupplier(() -> cameraSubsystem.timestamp);
+        driveSubsystem.setTurretAngleSupplier(() -> Units.Degrees.of(turretSubsystem.getHeading()));
+        driveSubsystem.setLimelightUpdateSupplier(() -> !cameraSubsystem.rejectUpdate);
+        driveSubsystem.setLimelightMt2Supplier(() -> cameraSubsystem.megatag2.getBoolean(true));
 
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
-    // // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    // new Trigger(m_exampleSubsystem::exampleCondition)
-    //     .onTrue(new ExampleCommand(m_exampleSubsystem));
+        Shuffleboard.getTab("Teleoperated").add("CS", CommandScheduler.getInstance());
 
-    // // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // // cancelling on release.
-    // m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
-  }
+        // Configure the trigger bindings
+        configureBindings();
+    }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
-  public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
-  }
+    /**
+     * Use this method to define your trigger->command mappings. Triggers can be
+     * created via the
+     * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with
+     * an arbitrary
+     * predicate, or via the named factories in {@link
+     * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for
+     * {@link
+     * CommandXboxController
+     * Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
+     * PS4} controllers or
+     * {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
+     * joysticks}.
+     */
+    private void configureBindings() {
+        new Trigger(() -> Constants.controller.getResetPoseButton())
+                .onTrue(Commands.runOnce(() -> driveSubsystem.resetPos()));
+        // .whileTrue(driveSubsystem.run(() -> driveSubsystem.voltageDrive()));
+
+        // Drive field centric
+        new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
+                .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+
+        // // Drive field centric facing origin
+        // new Trigger(() ->
+        // Constants.controller.getDriveFieldCentricFacingOriginMode())
+        // .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() ->
+        // 0, () -> 0));
+
+        new Trigger(() -> Constants.controller.allShoot()).whileTrue(
+                new ParallelCommandGroup(
+                        shooterSubsystem.run(
+                                () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+                                        .distanceToConfig(Units.Meters.of(
+                                                Kinematics.HUB_POSITION_2D
+                                                        .getDistance(driveSubsystem
+                                                                .botToTurret(driveSubsystem
+                                                                        .getPose())
+                                                                .getTranslation()))).shooter_rpm))),
+                        new SequentialCommandGroup(
+                                new WaitCommand(.3),
+                                rollerSubsystem.run(() -> rollerSubsystem.set(.5,
+                                        Units.RPM.of(Utilites.distanceToConfig(Units.Meters
+                                                .of(Kinematics.HUB_POSITION_2D
+                                                        .getDistance(driveSubsystem
+                                                                .botToTurret(driveSubsystem
+                                                                        .getPose())
+                                                                .getTranslation()))).kicker_rpm)))),
+                        hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
+                                .distanceToConfig(Units.Meters.of(
+                                        Kinematics.HUB_POSITION_2D.getDistance(
+                                                driveSubsystem
+                                                        .botToTurret(driveSubsystem
+                                                                .getPose())
+                                                        .getTranslation()))).servo_pos)),
+                        faceHubCommand()));
+
+        // // Drive field centric snapping
+        // new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
+        // .whileTrue(driveSubsystem.controllerDriveFieldCentricSnapCommand());
+
+        // // Reset pose to origin
+        // new Trigger(() -> Constants.controller.getResetPoseButton())
+        // .onTrue(Commands.runOnce(driveSubsystem::setPoseToCam));
+
+        // // Align to origin pose with deceleration
+        // new Trigger(() -> Constants.controller.getAlignToOriginPoseButton())
+        // .whileTrue(new AlignToPose(driveSubsystem, new Pose2d(0, 0,
+        // Rotation2d.kZero)));
+
+        // new Trigger(() ->
+        // Constants.controller.getResetPoseButton()).whileTrue(turretSubsystem.run(()
+        // -> {
+        // double theta = cameraSubsystem.getThetaDiff();
+        // turretSubsystem.setPower(-(theta / 180 * .5));
+        // System.out.println(theta);
+        // }));
+
+        new Trigger(() -> Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
+            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(6000)));
+
+        }, () -> shooterSubsystem.setDutyCycle(0)));
+
+        new Trigger(() -> Constants.controller.getRoller()).whileTrue(
+                rollerSubsystem.runEnd(() -> {
+                    rollerSubsystem.set(.5,
+                            Units.RPM.of(rollerSubsystem.kickerSpeed.getDouble(3000)));
+                }, () -> rollerSubsystem.set(0)));
+
+        new Trigger(() -> Constants.controller.getIntake()).whileTrue(
+                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.9),
+                        () -> intakeSubsystem.intake.set(0)));
+
+        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand());
+    }
+
+    public GenericEntry flightTimeEntry = Shuffleboard.getTab("Teleoperated").add("Flight Time", 0).getEntry();
+
+    public Command faceHubCommand() {
+        return Commands.run(() -> {
+            // double angle = Kinematics
+            // .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
+            // .getRotation().getDegrees();
+            double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0))
+                    .getRotation()
+                    .getDegrees();
+            angle = MathUtil.clamp(angle, -90, 90);
+
+            turretSubsystem.setTarget(angle);
+        }, turretSubsystem);
+    }
+
+    public Command getAutonomousCommand() {
+        // An example command will be run in autonomous
+        // return driveSubsystem.driveRobotCentricCommand(() -> 1.0, () -> 0.0, () ->
+        // 0.0)
+        // .withDeadline(Commands.waitSeconds(1));
+        return new SequentialCommandGroup(
+                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0,
+                        0.25 * driveSubsystem.getMaxSpeed()))
+                        .onlyWhile(() -> Double.isNaN(cameraSubsystem.getThetaDiff())),
+                new ParallelCommandGroup(
+                        shooterSubsystem.run(
+                                () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+                                        .distanceToConfig(Units.Meters.of(
+                                                Kinematics.HUB_POSITION_2D
+                                                        .getDistance(driveSubsystem
+                                                                .botToTurret(driveSubsystem
+                                                                        .getPose())
+                                                                .getTranslation()))).shooter_rpm))),
+                        new SequentialCommandGroup(
+                                new WaitCommand(1.5),
+                                new ParallelDeadlineGroup(
+                                        new WaitCommand(3),
+                                        rollerSubsystem.run(
+                                                () -> rollerSubsystem
+                                                        .set(.5,
+                                                                Units.RPM.of(Utilites
+                                                                        .distanceToConfig(
+                                                                                Units.Meters
+                                                                                        .of(Kinematics.HUB_POSITION_2D
+                                                                                                .getDistance(
+                                                                                                        driveSubsystem
+                                                                                                                .botToTurret(
+                                                                                                                        driveSubsystem
+                                                                                                                                .getPose())
+                                                                                                                .getTranslation()))).kicker_rpm))))),
+                        hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
+                                .distanceToConfig(Units.Meters.of(
+                                        Kinematics.HUB_POSITION_2D.getDistance(
+                                                driveSubsystem
+                                                        .botToTurret(driveSubsystem
+                                                                .getPose())
+                                                        .getTranslation()))).servo_pos)),
+                        faceHubCommand(),
+                        intakeSubsystem.run(() -> intakeSubsystem.intake.set(.9))));
+        // return Autos.exampleAuto(m_driveSubsystem);
+    }
 }
