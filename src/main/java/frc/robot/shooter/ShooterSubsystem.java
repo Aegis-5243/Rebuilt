@@ -15,6 +15,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -27,10 +28,11 @@ public class ShooterSubsystem extends SubsystemBase {
     public VelocityVoltage velocityRequest;
     public VoltageOut voltageRequest;
     public DutyCycleOut dutyCycleRequest;
-
+    
     public SysIdRoutine sysId;
-
+    
     public GenericEntry targetRPM;
+    public GenericEntry RPMMod;
 
     /** Creates a new ExampleSubsystem. */
     public ShooterSubsystem() {
@@ -43,6 +45,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 () -> Units.RotationsPerSecond.of(secondaryShooter.getVelocity().getValueAsDouble()).in(Units.RPM));
         Shuffleboard.getTab("pid").addDouble("motor_curr_target", () -> Units.RotationsPerSecond
                 .of(primaryShooter.getClosedLoopReference().getValueAsDouble()).in(Units.RPM));
+
+        RPMMod = Shuffleboard.getTab("pid").add("RPM-MODIFIER", 1).getEntry();
 
         targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 6000).getEntry();
 
@@ -77,11 +81,13 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void setVelocity(AngularVelocity speed) {
+        speed = speed.times(RPMMod.getDouble(1.0));
         primaryShooter.setControl(velocityRequest.withVelocity(speed).withFeedForward(Constants.SHOOTER_kF));
 
     }
 
     public void setDutyCycle(double speed) {
+        speed = speed * RPMMod.getDouble(1.0);
         primaryShooter.setControl(dutyCycleRequest.withOutput(speed));
     }
 

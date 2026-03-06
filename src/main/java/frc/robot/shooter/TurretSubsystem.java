@@ -80,6 +80,8 @@ public class TurretSubsystem extends SubsystemBase {
 
         Shuffleboard.getTab("turret").add("Reset turret to forward",
                 runOnce(() -> turretEncoder.setPosition(0)).ignoringDisable(true));
+        Shuffleboard.getTab("turret").add("Reset turret to right",
+                runOnce(() -> turretEncoder.setPosition(-90)).ignoringDisable(true));
     }
 
     public double getHeading() {

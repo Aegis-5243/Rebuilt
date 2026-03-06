@@ -5,6 +5,7 @@
 package frc.robot.camera;
 
 import java.util.Arrays;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -17,7 +18,9 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.drive.DriveSubsystem;
 import frc.robot.shooter.TurretSubsystem;
@@ -41,6 +44,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     /** Creates a new ExampleSubsystem. */
     public CameraSubsystem(DriveSubsystem driveSubsystem) {
+
         this.driveSubsystem = driveSubsystem;
         // this.poseSupplier = poseSupplier;
         // this.yaw = yawSupplier;
@@ -49,7 +53,7 @@ public class CameraSubsystem extends SubsystemBase {
         this.timestamp = 0;
         this.rejectUpdate = true;
         this.doPoseEstimation = true;
-        megatag2 = Shuffleboard.getTab("camera").add("megatag2", true).getEntry();
+        Shuffleboard.getTab("camera").addBoolean("megatag2", this::useMegaTag2);
         Shuffleboard.getTab("camera").addDouble("tx", () -> getThetaDiff());
         // turretLimelight = new HttpCamera("turret_limelight", "10.52.43.11:5800");
 
@@ -58,12 +62,13 @@ public class CameraSubsystem extends SubsystemBase {
 
     public void updateVisionPose() {
 
-        boolean useMegaTag2 = megatag2.getBoolean(true); // set to false to use MegaTag1
+        // boolean useMegaTag2 = megatag2.getBoolean(true); // set to false to use
+        // MegaTag1
         boolean doRejectUpdate = false;
-        if (useMegaTag2 == false) {
+        if (useMegaTag2() == false) {
             LimelightHelpers.PoseEstimate mt1;
             if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
-                mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+                mt1 = LimelightHelpers.getBotPoseEstimate_wpiRed("limelight");
             else
                 mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
 
@@ -84,11 +89,11 @@ public class CameraSubsystem extends SubsystemBase {
                 timestamp = mt1.timestampSeconds;
             }
             this.rejectUpdate = doRejectUpdate;
-        } else if (useMegaTag2 == true) {
+        } else if (useMegaTag2() == true) {
             // double angle = driveSubsystem.getPose().getRotation().getDegrees() + 180;
             double angle = driveSubsystem.getEstimatedCameraPose().getRotation().getDegrees();
             if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Red)
-            angle += 180;
+                angle += 180;
 
             LimelightHelpers.SetRobotOrientation("limelight",
                     angle, 0, 0, 0, 0, 0);
@@ -98,11 +103,12 @@ public class CameraSubsystem extends SubsystemBase {
             else
                 mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
 
-            // if (Math.abs(angularVelocity.get().in(Units.DegreesPerSecond)) > 720) // if our angular velocity is greater
-            //                                                                       // than 720 degrees per second,
+            // if (Math.abs(angularVelocity.get().in(Units.DegreesPerSecond)) > 720) // if
+            // our angular velocity is greater
+            // // than 720 degrees per second,
             // ignore vision updates
             // {
-            //     doRejectUpdate = true;
+            // doRejectUpdate = true;
             // }
             if (mt2.tagCount == 0) {
                 doRejectUpdate = true;
@@ -131,6 +137,17 @@ public class CameraSubsystem extends SubsystemBase {
         if (Arrays.asList(validIDs).contains(LimelightHelpers.getFiducialID(Constants.TURRET_LIMELIGHT)))
             return LimelightHelpers.getTX(Constants.TURRET_LIMELIGHT);
         return Double.NaN;
+    }
+
+    // Only use MegaTag1 when back button is held
+    public boolean useMegaTag2() {
+        return !mt1Override && !Constants.controller.getResetPoseButton();
+    }
+
+    public boolean mt1Override = false;
+
+    public Command useMt1Command() {
+        return startEnd(() -> mt1Override = true, () -> mt1Override = false);
     }
 
     @Override

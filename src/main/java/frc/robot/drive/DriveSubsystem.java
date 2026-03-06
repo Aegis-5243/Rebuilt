@@ -79,7 +79,7 @@ public class DriveSubsystem extends SubsystemBase {
   public DoubleSupplier limelightTimestampSupplier;
   public Supplier<Angle> turretAngle;
   public Supplier<Boolean> doUpdate;
-  public Supplier<Boolean> limelightMt2Supplier;
+  public BooleanSupplier limelightMt2Supplier;
 
   private GenericEntry temp;
 
@@ -277,7 +277,7 @@ public class DriveSubsystem extends SubsystemBase {
     doUpdate = supplier;
   }
 
-  public void setLimelightMt2Supplier(Supplier<Boolean> limelightMt2Supplier) {
+  public void setLimelightMt2Supplier(BooleanSupplier limelightMt2Supplier) {
     this.limelightMt2Supplier = limelightMt2Supplier;
   }
 
@@ -443,8 +443,8 @@ public class DriveSubsystem extends SubsystemBase {
       field.getObject("limelight").setPose(limelightPoseSupplier.get());
 
       double visionRotStdev = 9999999;
-      if (limelightMt2Supplier != null && limelightMt2Supplier.get() == false) {
-        visionRotStdev = 2;
+      if (limelightMt2Supplier != null && limelightMt2Supplier.getAsBoolean() == false) {
+        visionRotStdev = 1.0;
         robotPose = cameraToBotRaw(limelightPoseSupplier.get());
       } else {
         robotPose = cameraToBot(limelightPoseSupplier.get());
@@ -461,11 +461,12 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void resetPos() {
-    Pose2d pose = new Pose2d(0.0, 0.0, Rotation2d.kZero);
+    Pose2d pose = new Pose2d(Kinematics.HUB_POSITION_2D.plus(new Translation2d(-1, 0)), Rotation2d.kZero);
     poseEstimator.resetPose(pose);
-    gyro.setAngleAdjustment(
-        gyro.getAngleAdjustment()
-            + pose.getRotation().getDegrees() - gyro.getAngle());
+    poseEstimator.resetPose(pose);
+    // gyro.setAngleAdjustment(
+    //     gyro.getAngleAdjustment()
+    //         + pose.getRotation().getDegrees() - gyro.getAngle());
 
     currentVelocity = new Transform2d();
   }

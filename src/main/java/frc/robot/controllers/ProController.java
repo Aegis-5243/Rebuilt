@@ -107,4 +107,14 @@ public class ProController implements DriveController {
     public boolean allShoot() {
         return controller.getAButton();
     }
+
+    @Override
+    public boolean climbUp() {
+        return controller.getYButton();
+    }
+
+    @Override
+    public boolean climbDown() {
+        return controller.getBButton();
+    }
 }

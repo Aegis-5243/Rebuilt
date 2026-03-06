@@ -58,7 +58,7 @@ public final class Constants {
 
     public static final int TURRET_MOTOR = 41;
     /*** Degrees per revolution */
-    public static final double TURRET_DEGREES_PER_REV = 7.875;
+    public static final double TURRET_DEGREES_PER_REV = 7.75; /* original 7.875 */
     /*** Distance between center of turret and limelight lens */
     public static final Distance TURRET_RADIUS = Units.Inches.of(7.5);
     public static final Distance CENTER_OF_BOT_TO_CENTER_OF_TURRET = Units.Inches.of(8.5);
@@ -84,13 +84,24 @@ public final class Constants {
     public static final int KICKER = 23;
 
     public static final Map<Distance, Config> shooter_configs = Map.of(
-        Units.Meters.of(1.5), new Config(3750, 0, 3000),
-        Units.Meters.of(1.8), new Config(4175, 0.1, 3000),
-        Units.Meters.of(2.25), new Config(5750, 0.2, 3500),
-        Units.Meters.of(2.5), new Config(6000, 0.25, 3750),
-        Units.Meters.of(2.946), new Config(6000, 0.4, 4000)
-    );
-
+            Units.Meters.of(1.5), new Config(3750, 0, 3000),
+            Units.Meters.of(1.8), new Config(4175, 0.1, 3000),
+            Units.Meters.of(2.25), new Config(5750, 0.2, 3500),
+            Units.Meters.of(2.5), new Config(6000, 0.25, 3750),
+            Units.Meters.of(2.946), new Config(6000, 0.4, 4000));
+    
+    /* TODO */
+    public static final int CLIMB_MOTOR = 43;
+    
+    /* rotations to inches
+     * 1:162 gear and gearbox ratio
+     * 35 chain: 3/8" pitch
+     * 15 tooth interface
+     */
+    /** rotations to inches */
+    public static final double CLIMB_POSISION_CONVERSION_FACTOR = 3.0/8.0 * 15.0 / 162.0;
+    /** RPM to inches per second */
+    public static final double CLIMB_VELOCITY_CONVERSION_FACTOR = CLIMB_POSISION_CONVERSION_FACTOR / 60.0;
 
     public static DriveController controller = new ProController(0);
 

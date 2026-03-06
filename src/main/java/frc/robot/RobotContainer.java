@@ -4,20 +4,27 @@
 
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.VideoSource;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.RuntimeType;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.camera.CameraSubsystem;
+import frc.robot.climb.ClimbSubsystem;
 import frc.robot.drive.DriveSubsystem;
 import frc.robot.intake.IntakeSubsystem;
 import frc.robot.shooter.HoodSubsystem;
@@ -45,6 +52,7 @@ public class RobotContainer {
     private final RollerSubsystem rollerSubsystem = new RollerSubsystem();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     private final CameraSubsystem cameraSubsystem = new CameraSubsystem(driveSubsystem);
+    private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
     // private final CameraSubsystem cameraSubsystem = new
     // CameraSubsystem(driveSubsystem::getPose,
     // () -> driveSubsystem.gyro.getAngle(), () ->
@@ -77,15 +85,19 @@ public class RobotContainer {
         turretSubsystem.setDefaultCommand(turretSubsystem.run(() -> {
             turretSubsystem.setPower(Constants.controller.getTurretDisplacement() * 0.2);
         }).withName("turretDefault"));
+        climbSubsystem.setDefaultCommand(climbSubsystem.climbDefaultCommand());
+
         CommandScheduler.getInstance().registerSubsystem(cameraSubsystem);
 
         driveSubsystem.setLimelightPoseSupplier(cameraSubsystem::getPose);
         driveSubsystem.setLimelightTimestampSupplier(() -> cameraSubsystem.timestamp);
         driveSubsystem.setTurretAngleSupplier(() -> Units.Degrees.of(turretSubsystem.getHeading()));
         driveSubsystem.setLimelightUpdateSupplier(() -> !cameraSubsystem.rejectUpdate);
-        driveSubsystem.setLimelightMt2Supplier(() -> cameraSubsystem.megatag2.getBoolean(true));
+        driveSubsystem.setLimelightMt2Supplier(cameraSubsystem::useMegaTag2);
 
         Shuffleboard.getTab("Teleoperated").add("CS", CommandScheduler.getInstance());
+
+        CameraServer.startAutomaticCapture(0);
 
         // Configure the trigger bindings
         configureBindings();
@@ -133,12 +145,13 @@ public class RobotContainer {
                         new SequentialCommandGroup(
                                 new WaitCommand(.3),
                                 rollerSubsystem.run(() -> rollerSubsystem.set(.5,
-                                        Units.RPM.of(Utilites.distanceToConfig(Units.Meters
-                                                .of(Kinematics.HUB_POSITION_2D
-                                                        .getDistance(driveSubsystem
-                                                                .botToTurret(driveSubsystem
-                                                                        .getPose())
-                                                                .getTranslation()))).kicker_rpm)))),
+                                        Units.RPM.of(Utilites.distanceToConfig(
+                                                Units.Meters
+                                                        .of(Kinematics.HUB_POSITION_2D
+                                                                .getDistance(driveSubsystem
+                                                                        .botToTurret(driveSubsystem
+                                                                                .getPose())
+                                                                        .getTranslation()))).kicker_rpm)))),
                         hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
                                 .distanceToConfig(Units.Meters.of(
                                         Kinematics.HUB_POSITION_2D.getDistance(
@@ -185,6 +198,10 @@ public class RobotContainer {
                         () -> intakeSubsystem.intake.set(0)));
 
         new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand());
+
+        new Trigger(Constants.controller::climbUp).whileTrue(climbSubsystem.setPowerCommand(0.5));
+
+        new Trigger(Constants.controller::climbDown).whileTrue(climbSubsystem.setPowerCommand(-0.5));
     }
 
     public GenericEntry flightTimeEntry = Shuffleboard.getTab("Teleoperated").add("Flight Time", 0).getEntry();
@@ -209,10 +226,21 @@ public class RobotContainer {
         // 0.0)
         // .withDeadline(Commands.waitSeconds(1));
         return new SequentialCommandGroup(
+                new ParallelDeadlineGroup(
+                        new WaitCommand(1),
+                        new InstantCommand(() -> driveSubsystem.resetPos()),
+                        driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(-0.7, 0, 0)),
+                        new RunCommand(() -> turretSubsystem.setTarget(0), turretSubsystem)),
                 driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0,
-                        0.25 * driveSubsystem.getMaxSpeed()))
+                        .5 * driveSubsystem.getMaxSpeed()))
                         .onlyWhile(() -> Double.isNaN(cameraSubsystem.getThetaDiff())),
+                /*
+                 * new WaitCommand(1.0)
+                 * .raceWith(cameraSubsystem.useMt1Command()),
+                 */
+                new WaitCommand(1.0),
                 new ParallelCommandGroup(
+                        /* cameraSubsystem.useMt1Command().withDeadline(new WaitCommand(3.0)), */
                         shooterSubsystem.run(
                                 () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
                                         .distanceToConfig(Units.Meters.of(
@@ -222,14 +250,19 @@ public class RobotContainer {
                                                                         .getPose())
                                                                 .getTranslation()))).shooter_rpm))),
                         new SequentialCommandGroup(
-                                new WaitCommand(1.5),
-                                new ParallelDeadlineGroup(
-                                        new WaitCommand(3),
-                                        rollerSubsystem.run(
-                                                () -> rollerSubsystem
-                                                        .set(.5,
-                                                                Units.RPM.of(Utilites
-                                                                        .distanceToConfig(
+                                new WaitCommand(.5),
+                                new RepeatCommand(
+                                        new WaitCommand(3).deadlineFor(rollerSubsystem.run(() -> rollerSubsystem.set(
+                                                .5,
+                                                Units.RPM.of(Utilites.distanceToConfig(
+                                                        Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(
+                                                                driveSubsystem.botToTurret(driveSubsystem.getPose())
+                                                                        .getTranslation()))).kicker_rpm))))
+                                                .andThen(
+                                                        new WaitCommand(0.5).deadlineFor(
+                                                                rollerSubsystem.run(() -> rollerSubsystem.set(
+                                                                        -.5,
+                                                                        Units.RPM.of(Utilites.distanceToConfig(
                                                                                 Units.Meters
                                                                                         .of(Kinematics.HUB_POSITION_2D
                                                                                                 .getDistance(
@@ -237,7 +270,7 @@ public class RobotContainer {
                                                                                                                 .botToTurret(
                                                                                                                         driveSubsystem
                                                                                                                                 .getPose())
-                                                                                                                .getTranslation()))).kicker_rpm))))),
+                                                                                                                .getTranslation()))).kicker_rpm))))))),
                         hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
                                 .distanceToConfig(Units.Meters.of(
                                         Kinematics.HUB_POSITION_2D.getDistance(

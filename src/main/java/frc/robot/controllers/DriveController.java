@@ -70,4 +70,8 @@ public interface DriveController {
     public double getTurretDisplacement();
 
     public boolean allShoot();
+
+    public boolean climbUp();
+
+    public boolean climbDown();
 }
