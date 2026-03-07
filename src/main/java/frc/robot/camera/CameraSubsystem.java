@@ -54,7 +54,8 @@ public class CameraSubsystem extends SubsystemBase {
         this.rejectUpdate = true;
         this.doPoseEstimation = true;
         Shuffleboard.getTab("camera").addBoolean("megatag2", this::useMegaTag2);
-        Shuffleboard.getTab("camera").addDouble("tx", () -> getThetaDiff());
+        if (DriverStation.isTest())
+            Shuffleboard.getTab("camera").addDouble("tx", () -> getHubTagThetaDiff());
         // turretLimelight = new HttpCamera("turret_limelight", "10.52.43.11:5800");
 
         // Shuffleboard.getTab("camera").add(turretLimelight);
@@ -126,11 +127,11 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     /**
-     * Returns the theta difference between the limelight and the hub.
+     * Returns the theta difference (tx value) between the limelight and the current april tag, assuming said april tag is on the hub.
      * 
-     * @return theta if looking at hub, else Double.NaN
+     * @return theta if looking at hub tag, else Double.NaN
      */
-    public double getThetaDiff() {
+    public double getHubTagThetaDiff() {
         Double[] validIDs = { 11.0, 2.0, 3.0, 4.0, 5.0, 8.0, 9.0, 10.0, 19.0, 20.0, 21.0, 24.0, 25.0, 26.0, 18.0,
                 27.0 };
 

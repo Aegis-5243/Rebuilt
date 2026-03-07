@@ -233,7 +233,7 @@ public class RobotContainer {
                         new RunCommand(() -> turretSubsystem.setTarget(0), turretSubsystem)),
                 driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0,
                         .5 * driveSubsystem.getMaxSpeed()))
-                        .onlyWhile(() -> Double.isNaN(cameraSubsystem.getThetaDiff())),
+                        .onlyWhile(() -> Double.isNaN(cameraSubsystem.getHubTagThetaDiff())),
                 /*
                  * new WaitCommand(1.0)
                  * .raceWith(cameraSubsystem.useMt1Command()),

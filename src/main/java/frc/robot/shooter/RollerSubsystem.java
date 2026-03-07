@@ -34,8 +34,6 @@ public class RollerSubsystem extends SubsystemBase {
 
         kickerSpeed = Shuffleboard.getTab("roller").add("kicker-speed-setter", 3000).getEntry();
         Shuffleboard.getTab("roller").addDouble("kicker-rpm", () -> kicker.getEncoder().getVelocity());
-
-
     }
 
     public void set(double speed) {
