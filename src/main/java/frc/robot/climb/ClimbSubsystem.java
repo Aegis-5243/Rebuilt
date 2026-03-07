@@ -3,7 +3,6 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot.climb;
 
-
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -33,7 +32,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.WrappingDutyCycleEncoder;
 import frc.robot.Constants;
 
-
 public class ClimbSubsystem extends SubsystemBase {
 
     public SparkMax climbMotor;
@@ -41,6 +39,9 @@ public class ClimbSubsystem extends SubsystemBase {
     // public ColorSensorV3 colorSensor;
     // private WrappingDutyCycleEncoder temp;
     // public DigitalInput limitSwitch;
+
+
+    private final double maxExtent = 6.5 + 0.8;
 
     /** Creates a new ExampleSubsystem. */
     public ClimbSubsystem() {
@@ -51,26 +52,33 @@ public class ClimbSubsystem extends SubsystemBase {
         double cI = 0.00;
         double cD = 0.005;
 
+
         climbEncoder = climbMotor.getEncoder();
 
         climbMotor.configure(
                 new SparkMaxConfig()
                         .apply(new EncoderConfig().positionConversionFactor(Constants.CLIMB_POSISION_CONVERSION_FACTOR)
-                        .velocityConversionFactor(Constants.CLIMB_VELOCITY_CONVERSION_FACTOR))
+                                .velocityConversionFactor(Constants.CLIMB_VELOCITY_CONVERSION_FACTOR))
                         .apply(new SparkMaxConfig().idleMode(IdleMode.kBrake))
                         .apply(new ClosedLoopConfig()
                                 .pid(cP, cI, cD)
                                 .maxOutput(0.5)
                                 .minOutput(-0.5))
-                        .apply(new SoftLimitConfig()
-                                .forwardSoftLimit(90).forwardSoftLimitEnabled(true)
-                                .reverseSoftLimit(-90).reverseSoftLimitEnabled(true)),
+                .apply(new SoftLimitConfig()
+                .forwardSoftLimit(maxExtent).forwardSoftLimitEnabled(true)
+                .reverseSoftLimit(0.0).reverseSoftLimitEnabled(true))
+                ,
                 ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         // Shuffleboard.getTab("climb").add("climbMotor", climbMotor);
         Shuffleboard.getTab("climb").addDouble("climbCurrent", climbMotor::getOutputCurrent);
         Shuffleboard.getTab("climb").addDouble("climbPos", climbEncoder::getPosition);
         Shuffleboard.getTab("climb").addDouble("climbVel", climbEncoder::getVelocity);
+
+        Shuffleboard.getTab("climb").add("Reset climb 0",
+                runOnce(() -> resetPosition(0.0)).ignoringDisable(true));
+        Shuffleboard.getTab("climb").add("Reset climb max (" + maxExtent + ")",
+                runOnce(() -> resetPosition(maxExtent)).ignoringDisable(true));
 
     }
 
@@ -86,19 +94,19 @@ public class ClimbSubsystem extends SubsystemBase {
     public void resetPosition(double position) {
         climbEncoder.setPosition(position);
     };
-    
+
     public void setPower(double power) {
         climbMotor.set(power);
     }
-    
+
     @Override
     public void periodic() {
-        
+
     }
 
     @Override
     public void simulationPeriodic() {
-        
+
     }
 
     public Command setPowerCommand(double power) {
@@ -117,4 +125,3 @@ public class ClimbSubsystem extends SubsystemBase {
         return run(() -> setPower(-0.1)).until(() -> true);
     }
 }
-

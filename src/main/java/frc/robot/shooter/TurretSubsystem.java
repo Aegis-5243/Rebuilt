@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.WrappingDutyCycleEncoder;
 import frc.robot.Constants;
+import pabeles.concurrency.ConcurrencyOps.Reset;
 
 public class TurretSubsystem extends SubsystemBase {
     public SparkMax turret;
@@ -82,6 +83,10 @@ public class TurretSubsystem extends SubsystemBase {
                 runOnce(() -> turretEncoder.setPosition(0)).ignoringDisable(true));
         Shuffleboard.getTab("turret").add("Reset turret to right",
                 runOnce(() -> turretEncoder.setPosition(-90)).ignoringDisable(true));
+
+
+
+        // turretEncoder.setPosition(-90); // ASSUME RIGHTWARD TURRET ON POWER CYCLE
     }
 
     public double getHeading() {

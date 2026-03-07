@@ -58,7 +58,7 @@ public final class Constants {
 
     public static final int TURRET_MOTOR = 41;
     /*** Degrees per revolution */
-    public static final double TURRET_DEGREES_PER_REV = 7.75; /* original 7.875 */
+    public static final double TURRET_DEGREES_PER_REV = 7.5; /* original 7.875 */
     /*** Distance between center of turret and limelight lens */
     public static final Distance TURRET_RADIUS = Units.Inches.of(7.5);
     public static final Distance CENTER_OF_BOT_TO_CENTER_OF_TURRET = Units.Inches.of(8.5);
