@@ -81,8 +81,6 @@ public class DriveSubsystem extends SubsystemBase {
   public Supplier<Boolean> doUpdate;
   public BooleanSupplier limelightMt2Supplier;
 
-  private GenericEntry temp;
-
   private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
 
   private Rotation2d snapDirection = Rotation2d.kZero;
@@ -218,42 +216,45 @@ public class DriveSubsystem extends SubsystemBase {
         },
         this));
 
-    tab.addDouble("gyroYaw", gyro::getAngle);
-    tab.add("flMotor", flMotor);
-    tab.add("frMotor", frMotor);
-    tab.add("blMotor", blMotor);
-    tab.add("brMotor", brMotor);
+    if (DriverStation.isTest()) {
+      tab.addDouble("gyroYaw", gyro::getAngle);
+      tab.add("flMotor", flMotor);
+      tab.add("frMotor", frMotor);
+      tab.add("blMotor", blMotor);
+      tab.add("brMotor", brMotor);
 
-    tab.add(drive);
-    tab.addDouble("flMotorTarget", () -> flMotor.getPIDTarget());
-    tab.addDouble("frMotorTarget", () -> frMotor.getPIDTarget());
-    tab.addDouble("blMotorTarget", () -> blMotor.getPIDTarget());
-    tab.addDouble("brMotorTarget", () -> brMotor.getPIDTarget());
+      tab.add(drive);
+      tab.addDouble("flMotorTarget", () -> flMotor.getPIDTarget());
+      tab.addDouble("frMotorTarget", () -> frMotor.getPIDTarget());
+      tab.addDouble("blMotorTarget", () -> blMotor.getPIDTarget());
+      tab.addDouble("brMotorTarget", () -> brMotor.getPIDTarget());
 
-    ShuffleboardTab othertab = Shuffleboard.getTab("more drivetrain");
-    othertab.addDouble("flMotorHBridge", () -> flMotor.get());
-    othertab.addDouble("frMotorHBridge", () -> frMotor.get());
-    othertab.addDouble("blMotorHBridge", () -> blMotor.get());
-    othertab.addDouble("brMotorHBridge", () -> brMotor.get());
-    // ShuffleboardLayout encoderLayout =
-    // tab.getLayout("encoders", "kList");
+      ShuffleboardTab othertab = Shuffleboard.getTab("more drivetrain");
+      othertab.addDouble("flMotorHBridge", () -> flMotor.get());
+      othertab.addDouble("frMotorHBridge", () -> frMotor.get());
+      othertab.addDouble("blMotorHBridge", () -> blMotor.get());
+      othertab.addDouble("brMotorHBridge", () -> brMotor.get());
+      // ShuffleboardLayout encoderLayout =
+      // tab.getLayout("encoders", "kList");
 
-    tab.add("flEncoder", flEncoder);
-    tab.add("frEncoder", frEncoder);
-    tab.add("blEncoder", blEncoder);
-    tab.add("brEncoder", brEncoder);
-    tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
-    tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
-    tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
-    tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
-    tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
+      tab.add("flEncoder", flEncoder);
+      tab.add("frEncoder", frEncoder);
+      tab.add("blEncoder", blEncoder);
+      tab.add("brEncoder", brEncoder);
+      tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
+      tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
+      tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
+      tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
+      tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
+
+      
+      tab.addDouble("dist_to_hub",
+          () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
+    }
 
     tab.addDouble("Shiftt Time Remains", () -> remainingHubSwitchTime());
     tab.addBoolean("Hub active", () -> isHubActive());
 
-    tab.addDouble("dist_to_hub",
-        () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
-    // temp = tab.add("", Constants.shooter_configs).getEntry();
 
     field = new Field2d();
     tab.add("Field", field);

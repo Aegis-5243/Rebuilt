@@ -25,6 +25,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -69,15 +70,17 @@ public class TurretSubsystem extends SubsystemBase {
         temp = new WrappingDutyCycleEncoder(9, turretEncoder::getVelocity, 0, true);
         limitSwitch = new DigitalInput(8);
         // encoder.
-        Shuffleboard.getTab("turret").addDouble("turret-encoder", () -> turretEncoder.getPosition());
-        Shuffleboard.getTab("turret").addDouble("turret-encoder-vel", turretEncoder::getVelocity);
-        Shuffleboard.getTab("turret").addDouble("turret-encoder2", () -> temp.get());
-        Shuffleboard.getTab("turret").addBoolean("turretEncoderConnected", () -> temp.isConnected());
-        Shuffleboard.getTab("color").addDouble("color-blue", colorSensor::getBlue);
-        Shuffleboard.getTab("color").addDouble("color-green", colorSensor::getGreen);
-        Shuffleboard.getTab("color").addDouble("color-red", colorSensor::getRed);
-        Shuffleboard.getTab("color").addBoolean("color-connected", colorSensor::isConnected);
-        Shuffleboard.getTab("turret").addBoolean("turret-limit", limitSwitch::get);
+        if (DriverStation.isTest()) {
+            Shuffleboard.getTab("turret").addDouble("turret-encoder", () -> turretEncoder.getPosition());
+            Shuffleboard.getTab("turret").addDouble("turret-encoder-vel", turretEncoder::getVelocity);
+            Shuffleboard.getTab("turret").addDouble("turret-encoder2", () -> temp.get());
+            Shuffleboard.getTab("turret").addBoolean("turretEncoderConnected", () -> temp.isConnected());
+            Shuffleboard.getTab("color").addDouble("color-blue", colorSensor::getBlue);
+            Shuffleboard.getTab("color").addDouble("color-green", colorSensor::getGreen);
+            Shuffleboard.getTab("color").addDouble("color-red", colorSensor::getRed);
+            Shuffleboard.getTab("color").addBoolean("color-connected", colorSensor::isConnected);
+            Shuffleboard.getTab("turret").addBoolean("turret-limit", limitSwitch::get);
+        }
 
         Shuffleboard.getTab("turret").add("Reset turret to forward",
                 runOnce(() -> turretEncoder.setPosition(0)).ignoringDisable(true));
