@@ -117,4 +117,9 @@ public class ProController implements DriveController {
     public boolean climbDown() {
         return controller.getBButton();
     }
+
+    @Override
+    public boolean getReverseRollers() {
+        return controller.getXButton();
+    }
 }

@@ -15,6 +15,10 @@ public class Utilites {
 
         return Constants.shooter_configs.get(closest);
     }
+
+    public static void setUpGenericEntry() {
+        
+    }
     
     public static class Config {
         public double shooter_rpm;

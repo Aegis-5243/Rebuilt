@@ -70,9 +70,9 @@ public class TurretSubsystem extends SubsystemBase {
         temp = new WrappingDutyCycleEncoder(9, turretEncoder::getVelocity, 0, true);
         limitSwitch = new DigitalInput(8);
         // encoder.
+        Shuffleboard.getTab("turret").addDouble("turret-encoder", () -> turretEncoder.getPosition());
+        Shuffleboard.getTab("turret").addDouble("turret-encoder-vel", turretEncoder::getVelocity);
         if (DriverStation.isTest()) {
-            Shuffleboard.getTab("turret").addDouble("turret-encoder", () -> turretEncoder.getPosition());
-            Shuffleboard.getTab("turret").addDouble("turret-encoder-vel", turretEncoder::getVelocity);
             Shuffleboard.getTab("turret").addDouble("turret-encoder2", () -> temp.get());
             Shuffleboard.getTab("turret").addBoolean("turretEncoderConnected", () -> temp.isConnected());
             Shuffleboard.getTab("color").addDouble("color-blue", colorSensor::getBlue);

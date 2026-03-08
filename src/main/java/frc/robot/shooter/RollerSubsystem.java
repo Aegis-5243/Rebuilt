@@ -37,11 +37,18 @@ public class RollerSubsystem extends SubsystemBase {
     }
 
     public void set(double speed) {
-        roller.set(speed);
+        double rollerSpeed = speed;
+        if (Constants.controller.getReverseRollers()) {
+            rollerSpeed = -0.5;
+        }
+        roller.set(rollerSpeed);
         kicker.set(speed);
     }
 
     public void set(double rollerSpeed, AngularVelocity kickerSpeed) {
+        if (Constants.controller.getReverseRollers()) {
+            rollerSpeed = -0.5;
+        }
         roller.set(rollerSpeed);
         kicker.getClosedLoopController().setSetpoint(-kickerSpeed.in(Units.RPM), ControlType.kVelocity);
     }

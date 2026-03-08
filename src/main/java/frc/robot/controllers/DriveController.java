@@ -65,6 +65,8 @@ public interface DriveController {
 
     public boolean getRoller();
 
+    public boolean getReverseRollers();
+
     public double getHoodDisplacement();
 
     public double getTurretDisplacement();

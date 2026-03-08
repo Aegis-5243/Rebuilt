@@ -103,4 +103,10 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'climbDown'");
     }
 
+    @Override
+    public boolean getReverseRollers() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getReverseRollers'");
+    }
+
 }
