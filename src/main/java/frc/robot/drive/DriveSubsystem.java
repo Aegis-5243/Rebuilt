@@ -241,16 +241,17 @@ public class DriveSubsystem extends SubsystemBase {
       tab.add("frEncoder", frEncoder);
       tab.add("blEncoder", blEncoder);
       tab.add("brEncoder", brEncoder);
-      tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
       tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
       tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
       tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
       tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
-
+      
       
       tab.addDouble("dist_to_hub",
-          () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
+      () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
     }
+    
+    tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
 
     tab.addDouble("Shiftt Time Remains", () -> remainingHubSwitchTime());
     tab.addBoolean("Hub active", () -> isHubActive());
@@ -461,10 +462,15 @@ public class DriveSubsystem extends SubsystemBase {
     return poseEstimator.getEstimatedPosition();
   }
 
+  public void resetPos(Pose2d pose) {
+    poseEstimator.resetPose(pose);
+    poseEstimator.resetPose(pose);
+
+  }
+
   public void resetPos() {
     Pose2d pose = new Pose2d(Kinematics.HUB_POSITION_2D.plus(new Translation2d(-1, 0)), Rotation2d.kZero);
-    poseEstimator.resetPose(pose);
-    poseEstimator.resetPose(pose);
+    resetPos(pose);
     // gyro.setAngleAdjustment(
     //     gyro.getAngleAdjustment()
     //         + pose.getRotation().getDegrees() - gyro.getAngle());
