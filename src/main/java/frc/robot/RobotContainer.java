@@ -170,7 +170,7 @@ public class RobotContainer {
                         new WaitCommand(1),
                         new InstantCommand(() -> driveSubsystem
                                 .resetPos(new Pose2d(Kinematics.HUB_POSITION_2D, Rotation2d.k180deg))),
-                        driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(-0.7, 0, 0)),
+                        driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0.7, 0, 0)),
                         new RunCommand(() -> turretSubsystem.setTarget(0), turretSubsystem)),
                 // driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0,
                 // .5 * driveSubsystem.getMaxSpeed()))
