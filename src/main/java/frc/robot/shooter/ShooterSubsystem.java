@@ -46,7 +46,7 @@ public class ShooterSubsystem extends SubsystemBase {
         Shuffleboard.getTab("pid").addDouble("motor_curr_target", () -> Units.RotationsPerSecond
                 .of(primaryShooter.getClosedLoopReference().getValueAsDouble()).in(Units.RPM));
 
-        RPMMod = Shuffleboard.getTab("pid").add("RPM-MODIFIER", 0.75).getEntry();
+        RPMMod = Shuffleboard.getTab("pid").add("RPM-MODIFIER", 1).getEntry();
 
         targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 6000).getEntry();
 
@@ -81,13 +81,13 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void setVelocity(AngularVelocity speed) {
-        speed = speed.times(RPMMod.getDouble(0.75));
+        speed = speed.times(RPMMod.getDouble(1));
         primaryShooter.setControl(velocityRequest.withVelocity(speed).withFeedForward(Constants.SHOOTER_kF));
 
     }
 
     public void setDutyCycle(double speed) {
-        speed = speed * RPMMod.getDouble(0.75);
+        speed = speed * RPMMod.getDouble(1);
         primaryShooter.setControl(dutyCycleRequest.withOutput(speed));
     }
 

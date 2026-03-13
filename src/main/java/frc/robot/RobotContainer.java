@@ -4,16 +4,15 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Rotation;
+import static edu.wpi.first.units.Units.Degrees;
 
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.cscore.VideoSource;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.wpilibj.RuntimeType;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -37,6 +36,8 @@ import frc.robot.shooter.RollerSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
 import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.Kinematics;
+import frc.robot.utils.TurretCalculator;
+import frc.robot.utils.TurretCalculator.ShotData;
 import frc.robot.utils.Utilites;
 
 /**
@@ -124,7 +125,9 @@ public class RobotContainer {
                  */
                 new WaitCommand(1.0),
                 new ParallelCommandGroup(
-                        /* cameraSubsystem.useMt1Command().withDeadline(new WaitCommand(3.0)), */
+                        /*
+                         * cameraSubsystem.useMt1Command().withDeadline(new WaitCommand(3.0)),
+                         */
                         shooterSubsystem.run(
                                 () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
                                         .distanceToConfig(Units.Meters.of(
@@ -136,25 +139,38 @@ public class RobotContainer {
                         new SequentialCommandGroup(
                                 new WaitCommand(.5),
                                 new RepeatCommand(
-                                        new WaitCommand(3).deadlineFor(rollerSubsystem.run(() -> rollerSubsystem.set(
-                                                .5,
-                                                Units.RPM.of(Utilites.distanceToConfig(
-                                                        Units.Meters.of(Kinematics.HUB_POSITION_2D.getDistance(
-                                                                driveSubsystem.botToTurret(driveSubsystem.getPose())
-                                                                        .getTranslation()))).kicker_rpm))))
+                                        new WaitCommand(3).deadlineFor(
+                                                rollerSubsystem.run(
+                                                        () -> rollerSubsystem
+                                                                .set(
+                                                                        .5,
+                                                                        Units.RPM.of(Utilites
+                                                                                .distanceToConfig(
+                                                                                        Units.Meters.of(
+                                                                                                Kinematics.HUB_POSITION_2D
+                                                                                                        .getDistance(
+                                                                                                                driveSubsystem
+                                                                                                                        .botToTurret(
+                                                                                                                                driveSubsystem
+                                                                                                                                        .getPose())
+                                                                                                                        .getTranslation()))).kicker_rpm))))
                                                 .andThen(
-                                                        new WaitCommand(0.5).deadlineFor(
-                                                                rollerSubsystem.run(() -> rollerSubsystem.set(
-                                                                        -.5,
-                                                                        Units.RPM.of(Utilites.distanceToConfig(
-                                                                                Units.Meters
-                                                                                        .of(Kinematics.HUB_POSITION_2D
-                                                                                                .getDistance(
-                                                                                                        driveSubsystem
-                                                                                                                .botToTurret(
-                                                                                                                        driveSubsystem
-                                                                                                                                .getPose())
-                                                                                                                .getTranslation()))).kicker_rpm))))))),
+                                                        new WaitCommand(0.5)
+                                                                .deadlineFor(
+                                                                        rollerSubsystem.run(
+                                                                                () -> rollerSubsystem
+                                                                                        .set(
+                                                                                                -.5,
+                                                                                                Units.RPM.of(Utilites
+                                                                                                        .distanceToConfig(
+                                                                                                                Units.Meters
+                                                                                                                        .of(Kinematics.HUB_POSITION_2D
+                                                                                                                                .getDistance(
+                                                                                                                                        driveSubsystem
+                                                                                                                                                .botToTurret(
+                                                                                                                                                        driveSubsystem
+                                                                                                                                                                .getPose())
+                                                                                                                                                .getTranslation()))).kicker_rpm))))))),
                         hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
                                 .distanceToConfig(Units.Meters.of(
                                         Kinematics.HUB_POSITION_2D.getDistance(
@@ -169,7 +185,8 @@ public class RobotContainer {
                 new ParallelDeadlineGroup(
                         new WaitCommand(1),
                         new InstantCommand(() -> driveSubsystem
-                                .resetPos(new Pose2d(Kinematics.HUB_POSITION_2D, Rotation2d.k180deg))),
+                                .resetPos(new Pose2d(Kinematics.HUB_POSITION_2D,
+                                        Rotation2d.k180deg))),
                         driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0.7, 0, 0)),
                         new RunCommand(() -> turretSubsystem.setTarget(0), turretSubsystem)),
                 // driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, 0,
@@ -181,27 +198,36 @@ public class RobotContainer {
                  */
                 new WaitCommand(1.0),
                 new ParallelCommandGroup(
-                        /* cameraSubsystem.useMt1Command().withDeadline(new WaitCommand(3.0)), */
+                        /*
+                         * cameraSubsystem.useMt1Command().withDeadline(new WaitCommand(3.0)),
+                         */
                         shooterSubsystem.run(
                                 () -> shooterSubsystem.setVelocity(Units.RPM.of(4500))),
                         new SequentialCommandGroup(
                                 new WaitCommand(.5),
                                 new RepeatCommand(
-                                        new WaitCommand(3).deadlineFor(rollerSubsystem.run(() -> rollerSubsystem.set(
-                                                .5,
-                                                Units.RPM.of(3500))))
+                                        new WaitCommand(3).deadlineFor(
+                                                rollerSubsystem.run(
+                                                        () -> rollerSubsystem
+                                                                .set(
+                                                                        .5,
+                                                                        Units.RPM.of(3500))))
                                                 .andThen(
-                                                        new WaitCommand(0.5).deadlineFor(
-                                                                rollerSubsystem.run(() -> rollerSubsystem.set(
-                                                                        -.5,
-                                                                        Units.RPM.of(3500))))))),
+                                                        new WaitCommand(0.5)
+                                                                .deadlineFor(
+                                                                        rollerSubsystem.run(
+                                                                                () -> rollerSubsystem
+                                                                                        .set(
+                                                                                                -.5,
+                                                                                                Units.RPM
+                                                                                                        .of(3500))))))),
                         // hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
-                        //         .distanceToConfig(Units.Meters.of(
-                        //                 Kinematics.HUB_POSITION_2D.getDistance(
-                        //                         driveSubsystem
-                        //                                 .botToTurret(driveSubsystem
-                        //                                         .getPose())
-                        //                                 .getTranslation()))).servo_pos)),
+                        // .distanceToConfig(Units.Meters.of(
+                        // Kinematics.HUB_POSITION_2D.getDistance(
+                        // driveSubsystem
+                        // .botToTurret(driveSubsystem
+                        // .getPose())
+                        // .getTranslation()))).servo_pos)),
                         // faceHubCommand(),
                         intakeSubsystem.run(() -> intakeSubsystem.intake.set(.9)))));
 
@@ -237,34 +263,36 @@ public class RobotContainer {
         // .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() ->
         // 0, () -> 0));
 
-        new Trigger(() -> Constants.controller.allShoot()).whileTrue(
-                new ParallelCommandGroup(
-                        shooterSubsystem.run(
-                                () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
-                                        .distanceToConfig(Units.Meters.of(
-                                                Kinematics.HUB_POSITION_2D
-                                                        .getDistance(driveSubsystem
-                                                                .botToTurret(driveSubsystem
-                                                                        .getPose())
-                                                                .getTranslation()))).shooter_rpm))),
-                        new SequentialCommandGroup(
-                                new WaitCommand(.3),
-                                rollerSubsystem.run(() -> rollerSubsystem.set(.5,
-                                        Units.RPM.of(Utilites.distanceToConfig(
-                                                Units.Meters
-                                                        .of(Kinematics.HUB_POSITION_2D
-                                                                .getDistance(driveSubsystem
-                                                                        .botToTurret(driveSubsystem
-                                                                                .getPose())
-                                                                        .getTranslation()))).kicker_rpm)))),
-                        hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
-                                .distanceToConfig(Units.Meters.of(
-                                        Kinematics.HUB_POSITION_2D.getDistance(
-                                                driveSubsystem
-                                                        .botToTurret(driveSubsystem
-                                                                .getPose())
-                                                        .getTranslation()))).servo_pos)),
-                        faceHubCommand()));
+        new Trigger(Constants.controller::allShoot).whileTrue(shootWithDistanceMapCommand());
+
+        // new Trigger(() -> Constants.controller.allShoot()).whileTrue(
+        //         new ParallelCommandGroup(
+        //                 shooterSubsystem.run(
+        //                         () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
+        //                                 .distanceToConfig(Units.Meters.of(
+        //                                         Kinematics.HUB_POSITION_2D
+        //                                                 .getDistance(driveSubsystem
+        //                                                         .botToTurret(driveSubsystem
+        //                                                                 .getPose())
+        //                                                         .getTranslation()))).shooter_rpm))),
+        //                 new SequentialCommandGroup(
+        //                         new WaitCommand(.3),
+        //                         rollerSubsystem.run(() -> rollerSubsystem.set(.5,
+        //                                 Units.RPM.of(Utilites.distanceToConfig(
+        //                                         Units.Meters
+        //                                                 .of(Kinematics.HUB_POSITION_2D
+        //                                                         .getDistance(driveSubsystem
+        //                                                                 .botToTurret(driveSubsystem
+        //                                                                         .getPose())
+        //                                                                 .getTranslation()))).kicker_rpm)))),
+        //                 hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
+        //                         .distanceToConfig(Units.Meters.of(
+        //                                 Kinematics.HUB_POSITION_2D.getDistance(
+        //                                         driveSubsystem
+        //                                                 .botToTurret(driveSubsystem
+        //                                                         .getPose())
+        //                                                 .getTranslation()))).servo_pos)),
+        //                 faceHubCommand()));
 
         // // Drive field centric snapping
         // new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
@@ -313,16 +341,64 @@ public class RobotContainer {
 
     public Command faceHubCommand() {
         return Commands.run(() -> {
-            // double angle = Kinematics
-            // .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
-            // .getRotation().getDegrees();
-            double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0))
-                    .getRotation()
-                    .getDegrees();
-            angle = MathUtil.clamp(angle, -90, 90);
+            double angle = Kinematics
+            .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
+            .getRotation().getDegrees();
+
+            
+            // double distance = TurretCalculator
+            //         .getDistanceToTarget(driveSubsystem.getTurretPose(), Constants.FieldConstants.HUB_BLUE)
+            //         .in(Units.Meters);
+
+            // ShotData shot = Constants.SHOT_MAP.get(distance);
+
+            // ShotData shot = TurretCalculator.iterativeMovingShotFromMap(
+            //     driveSubsystem.getTurretPose(), 
+            //     driveSubsystem.getFieldVelocity(),
+            //     Constants.FieldConstants.HUB_BLUE,
+            //     5);
+
+            // Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(), shot.getTarget());
+
+            // double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0))
+            //         .getRotation()
+            //         .getDegrees();
+
+            // double angle = azimuthAngle.in(Degrees);
+            angle = MathUtil.clamp(angle, Constants.TURRET_MIN_ANGLE.in(Degrees), Constants.TURRET_MAX_ANGLE.in(Degrees));
 
             turretSubsystem.setTarget(angle);
         }, turretSubsystem);
+    }
+
+    public void shootWithDistanceMap() {
+        // double distance = TurretCalculator
+        //         .getDistanceToTarget(driveSubsystem.getTurretPose(), Constants.FieldConstants.HUB_BLUE)
+        //         .in(Units.Meters);
+
+        // ShotData shot = Constants.SHOT_MAP.get(distance);
+
+        ShotData shot = TurretCalculator.iterativeMovingShotFromMap(
+                driveSubsystem.getTurretPose(), 
+                driveSubsystem.getFieldVelocity(),
+                Constants.FieldConstants.HUB_BLUE,
+                5);
+        
+        Pose2d thegoodposemaybe = new Pose2d(shot.getTarget().toTranslation2d(), Rotation2d.kZero);
+
+        driveSubsystem.field.getObject("predicted-hub").setPose(thegoodposemaybe);
+        
+        Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(), shot.getTarget()); 
+
+        double angle = MathUtil.clamp(azimuthAngle.in(Degrees), Constants.TURRET_MIN_ANGLE.in(Degrees), Constants.TURRET_MAX_ANGLE.in(Degrees));
+        turretSubsystem.setTarget(angle);
+        
+        hoodSubsystem.setPos(shot.hoodAngle());
+        shooterSubsystem.setVelocity(shot.getAngularExitVelocity());
+    }
+
+    public Command shootWithDistanceMapCommand() {
+        return new RunCommand(this::shootWithDistanceMap, shooterSubsystem, hoodSubsystem, turretSubsystem);
     }
 
     public Command getAutonomousCommand() {

@@ -47,6 +47,7 @@ import frc.lib.CustomMecanumDriveKinematics;
 import frc.robot.Constants;
 import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.Kinematics;
+import frc.robot.utils.TurretCalculator;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -256,6 +257,11 @@ public class DriveSubsystem extends SubsystemBase {
     tab.addDouble("Shiftt Time Remains", () -> remainingHubSwitchTime());
     tab.addBoolean("Hub active", () -> isHubActive());
 
+    tab.addDouble("Meters to Hub", () -> (TurretCalculator.getDistanceToTarget(getTurretPose   (), Constants.FieldConstants.HUB_BLUE)).in(Units.Meters));
+
+    tab.addDouble("Velocity X", () -> getVelocity().vxMetersPerSecond);
+    tab.addDouble("Velocity Y", () -> getVelocity().vyMetersPerSecond);
+    tab.addDouble("Velocity deg", () -> Math.toDegrees(getVelocity().omegaRadiansPerSecond));
 
     field = new Field2d();
     tab.add("Field", field);
@@ -475,7 +481,7 @@ public class DriveSubsystem extends SubsystemBase {
     //     gyro.getAngleAdjustment()
     //         + pose.getRotation().getDegrees() - gyro.getAngle());
 
-    currentVelocity = new Transform2d();
+    currentVelocity = new ChassisSpeeds();
   }
 
   public void voltageDrive() {
@@ -510,7 +516,7 @@ public class DriveSubsystem extends SubsystemBase {
    * changes in velocity
    */
 
-  Transform2d currentVelocity = new Transform2d();
+  ChassisSpeeds currentVelocity = new ChassisSpeeds();
 
   private void updateVelocity() {
     ChassisSpeeds speeds = kinematics.toChassisSpeeds(new MecanumDriveWheelSpeeds(
@@ -519,17 +525,23 @@ public class DriveSubsystem extends SubsystemBase {
         blEncoder.getRate(),
         brEncoder.getRate()));
 
-    double inter = 0.1;
+    double inter = 0;  
 
-    currentVelocity = new Transform2d(
-        MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(), inter),
-        MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(), inter),
-        Rotation2d.fromRadians(
-            MathUtil.interpolate(speeds.omegaRadiansPerSecond, currentVelocity.getRotation().getRadians(), inter)));
+    currentVelocity = speeds;
+
+    // currentVelocity = new Transform2d(
+    //     MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(), inter),
+    //     MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(), inter),
+    //     Rotation2d.fromRadians(
+    //         MathUtil.interpolate(speeds.omegaRadiansPerSecond, currentVelocity.getRotation().getRadians(), inter)));
   }
 
-  public Transform2d getVelocity() {
+  public ChassisSpeeds getVelocity() {
     return currentVelocity;
+  }
+
+  public ChassisSpeeds getFieldVelocity() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(currentVelocity, getPose().getRotation());
   }
 
   public Pose2d getFutureRobotPose2d(double dt) {
@@ -546,7 +558,9 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public Pose2d getSmoothFutureRobotPose2d(double dt) {
-    return getPose().transformBy(getVelocity().times(dt));
+    Twist2d delta = getVelocity().toTwist2d(dt);
+    Transform2d trans = new Transform2d(delta.dx, delta.dy, Rotation2d.fromRadians(delta.dtheta));
+    return getPose().transformBy(trans);
   }
 
   /*
