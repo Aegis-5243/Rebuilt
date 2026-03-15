@@ -4,6 +4,7 @@
 package frc.robot.climb;
 
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 
@@ -20,6 +21,7 @@ import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SoftLimitConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
@@ -34,7 +36,7 @@ import frc.robot.Constants;
 
 public class ClimbSubsystem extends SubsystemBase {
 
-    public SparkMax climbMotor;
+    public SparkFlex climbMotor;
     public RelativeEncoder climbEncoder;
     // public ColorSensorV3 colorSensor;
     // private WrappingDutyCycleEncoder temp;
@@ -46,7 +48,7 @@ public class ClimbSubsystem extends SubsystemBase {
     /** Creates a new ExampleSubsystem. */
     public ClimbSubsystem() {
         // TODO: config in rev hardware client
-        climbMotor = new SparkMax(Constants.CLIMB_MOTOR, MotorType.kBrushless);
+        climbMotor = new SparkFlex(Constants.CLIMB_MOTOR, MotorType.kBrushless);
 
         double cP = 0.016;
         double cI = 0.00;
@@ -56,7 +58,7 @@ public class ClimbSubsystem extends SubsystemBase {
         climbEncoder = climbMotor.getEncoder();
 
         climbMotor.configure(
-                new SparkMaxConfig()
+                new SparkFlexConfig()
                         .apply(new EncoderConfig().positionConversionFactor(Constants.CLIMB_POSISION_CONVERSION_FACTOR)
                                 .velocityConversionFactor(Constants.CLIMB_VELOCITY_CONVERSION_FACTOR))
                         .apply(new SparkMaxConfig().idleMode(IdleMode.kBrake))
@@ -123,5 +125,15 @@ public class ClimbSubsystem extends SubsystemBase {
 
     public Command homeClimbCommand() {
         return run(() -> setPower(-0.1)).until(() -> true);
+    }
+
+    double setpointDefaultSpeed = 0.5;
+    double setpointDir = 1;
+
+    public Command runToSetpointCommand(double setpoint) {
+
+        return startRun(  () -> setpointDir = (setpoint - getPos() >= 0 ? 1 : -1), 
+                        () -> setPower(setpointDir * setpointDefaultSpeed))
+                        .until(() -> (setpointDir > 0 && (setpoint - getPos()) <= 0) || (setpointDir < 0 && (getPos() - setpoint) <= 0));
     }
 }

@@ -24,12 +24,12 @@ public class AlignToPose extends Command {
         this.driveSubsystem = driveSubsystem;
         this.targetPose = targetPose;
         xController = new PIDController(5, 0.01, 0.3);
-        yController = new PIDController(5, 0.01, 0.3);
+        yController = new PIDController(6, 0.01, 0.3);
         rotController = new PIDController(0.04, 0.0001, 0.001);
         rotController.enableContinuousInput(-180.0, 180.0);
 
-        xController.setTolerance(Units.inchesToMeters(2));
-        yController.setTolerance(Units.inchesToMeters(2));
+        xController.setTolerance(Units.inchesToMeters(.5));
+        yController.setTolerance(Units.inchesToMeters(.5));
         rotController.setTolerance(2);
 
         alignedTimer = new Timer();

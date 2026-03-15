@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Inches;
 
 import java.util.Map;
 
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -139,7 +140,6 @@ public final class Constants {
 
         SHOT_MAP.put(4.0, new ShotData(4000, 0.43));
         TOF_MAP.put(4.0, 1.4);
-
     }
 
     /* TODO */
@@ -155,6 +155,8 @@ public final class Constants {
     public static final double CLIMB_POSISION_CONVERSION_FACTOR = 3.0 / 8.0 * 15.0 / 162.0;
     /** RPM to inches per second */
     public static final double CLIMB_VELOCITY_CONVERSION_FACTOR = CLIMB_POSISION_CONVERSION_FACTOR / 60.0;
+    public static final int GYRO = 15;
+    public static final double DRIVE_kP = 0.002;
 
     public static DriveController controller = new ProController(0);
 

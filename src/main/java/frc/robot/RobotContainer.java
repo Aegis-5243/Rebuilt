@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -13,6 +15,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,11 +29,13 @@ import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.camera.CameraSubsystem;
 import frc.robot.climb.ClimbSubsystem;
+import frc.robot.drive.AlignToPose;
 import frc.robot.drive.DriveSubsystem;
 import frc.robot.intake.IntakeSubsystem;
 import frc.robot.shooter.HoodSubsystem;
@@ -210,7 +217,7 @@ public class RobotContainer {
                                                 rollerSubsystem.run(
                                                         () -> rollerSubsystem
                                                                 .set(
-                                                                        .5,
+                                                                        .15,
                                                                         Units.RPM.of(3500))))
                                                 .andThen(
                                                         new WaitCommand(0.5)
@@ -218,7 +225,7 @@ public class RobotContainer {
                                                                         rollerSubsystem.run(
                                                                                 () -> rollerSubsystem
                                                                                         .set(
-                                                                                                -.5,
+                                                                                                -.15,
                                                                                                 Units.RPM
                                                                                                         .of(3500))))))),
                         // hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
@@ -229,9 +236,33 @@ public class RobotContainer {
                         // .getPose())
                         // .getTranslation()))).servo_pos)),
                         // faceHubCommand(),
-                        intakeSubsystem.run(() -> intakeSubsystem.intake.set(.9)))));
+                        intakeSubsystem.run(() -> intakeSubsystem.intake.set(.4)))));
+
+        autoChooser.addOption("climb", new SequentialCommandGroup(
+                new ParallelCommandGroup(
+                        new ParallelDeadlineGroup(
+                                new WaitCommand(1),
+                                new InstantCommand(() -> driveSubsystem
+                                        .resetPos(new Pose2d(Units.Inches.of(/*76.5*/136), Units.Inches.of(/*150.5*/76.5),
+                                                Rotation2d.k180deg))),
+                                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0.7, 0, 0)),
+                                new RunCommand(() -> turretSubsystem.setTarget(25), turretSubsystem)),
+                        climbSubsystem.runToSetpointCommand(7)),
+
+                // new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 - 1),
+                //         driveSubsystem.getPose().getMeasureY(), Rotation2d.k180deg)).withDeadline(new WaitCommand(2)),
+                new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 - 1), Units.Inches.of(123.97 - 15.75), Rotation2d.k180deg)),
+                climbSubsystem.runToSetpointCommand(2.0)));
+
+        // XboxController asdqwe = new XboxController(1);
+
+        // new Trigger(asdqwe::getAButton).whileTrue(new StartEndCommand(
+        // () -> asdqwe.setRumble(RumbleType.kBothRumble, 1),
+        // () -> asdqwe.setRumble(RumbleType.kBothRumble, 0)));
 
         Shuffleboard.getTab("Teleoperated").add(autoChooser);
+        Shuffleboard.getTab("Climb").add(new AlignToPose(driveSubsystem,
+                new Pose2d(Units.Inches.of(41.755 - 1), Units.Inches.of(123.97 - 15.75 / 2), Rotation2d.k180deg)));
     }
 
     /**
@@ -265,34 +296,9 @@ public class RobotContainer {
 
         new Trigger(Constants.controller::allShoot).whileTrue(shootWithDistanceMapCommand());
 
-        // new Trigger(() -> Constants.controller.allShoot()).whileTrue(
-        //         new ParallelCommandGroup(
-        //                 shooterSubsystem.run(
-        //                         () -> shooterSubsystem.setVelocity(Units.RPM.of(Utilites
-        //                                 .distanceToConfig(Units.Meters.of(
-        //                                         Kinematics.HUB_POSITION_2D
-        //                                                 .getDistance(driveSubsystem
-        //                                                         .botToTurret(driveSubsystem
-        //                                                                 .getPose())
-        //                                                         .getTranslation()))).shooter_rpm))),
-        //                 new SequentialCommandGroup(
-        //                         new WaitCommand(.3),
-        //                         rollerSubsystem.run(() -> rollerSubsystem.set(.5,
-        //                                 Units.RPM.of(Utilites.distanceToConfig(
-        //                                         Units.Meters
-        //                                                 .of(Kinematics.HUB_POSITION_2D
-        //                                                         .getDistance(driveSubsystem
-        //                                                                 .botToTurret(driveSubsystem
-        //                                                                         .getPose())
-        //                                                                 .getTranslation()))).kicker_rpm)))),
-        //                 hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
-        //                         .distanceToConfig(Units.Meters.of(
-        //                                 Kinematics.HUB_POSITION_2D.getDistance(
-        //                                         driveSubsystem
-        //                                                 .botToTurret(driveSubsystem
-        //                                                         .getPose())
-        //                                                 .getTranslation()))).servo_pos)),
-        //                 faceHubCommand()));
+        // new Trigger(() ->
+        // DriverStation.isEnabled()).whileTrue(shooterSubsystem.runEnd(shooterSubsystem.orchestra::play,
+        // shooterSubsystem.orchestra::stop));
 
         // // Drive field centric snapping
         // new Trigger(() -> Constants.controller.getDriveFieldCentricSnappingMode())
@@ -316,7 +322,7 @@ public class RobotContainer {
         // }));
 
         new Trigger(() -> Constants.controller.getShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
-            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(6000)));
+            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(3000)));
 
         }, () -> shooterSubsystem.setDutyCycle(0)));
 
@@ -342,30 +348,34 @@ public class RobotContainer {
     public Command faceHubCommand() {
         return Commands.run(() -> {
             double angle = Kinematics
-            .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
-            .getRotation().getDegrees();
+                    .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
+                    .getRotation().getDegrees();
 
-            
             // double distance = TurretCalculator
-            //         .getDistanceToTarget(driveSubsystem.getTurretPose(), Constants.FieldConstants.HUB_BLUE)
-            //         .in(Units.Meters);
+            // .getDistanceToTarget(driveSubsystem.getTurretPose(),
+            // Constants.FieldConstants.HUB_BLUE)
+            // .in(Units.Meters);
 
             // ShotData shot = Constants.SHOT_MAP.get(distance);
 
             // ShotData shot = TurretCalculator.iterativeMovingShotFromMap(
-            //     driveSubsystem.getTurretPose(), 
-            //     driveSubsystem.getFieldVelocity(),
-            //     Constants.FieldConstants.HUB_BLUE,
-            //     5);
+            // driveSubsystem.getTurretPose(),
+            // driveSubsystem.getFieldVelocity(),
+            // Constants.FieldConstants.HUB_BLUE,
+            // 5);
 
-            // Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(), shot.getTarget());
+            // Angle azimuthAngle =
+            // TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(),
+            // shot.getTarget());
 
-            // double angle = driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0))
-            //         .getRotation()
-            //         .getDegrees();
+            // double angle =
+            // driveSubsystem.getPredictedHubTransform2d(flightTimeEntry.getDouble(0))
+            // .getRotation()
+            // .getDegrees();
 
             // double angle = azimuthAngle.in(Degrees);
-            angle = MathUtil.clamp(angle, Constants.TURRET_MIN_ANGLE.in(Degrees), Constants.TURRET_MAX_ANGLE.in(Degrees));
+            angle = MathUtil.clamp(angle, Constants.TURRET_MIN_ANGLE.in(Degrees),
+                    Constants.TURRET_MAX_ANGLE.in(Degrees));
 
             turretSubsystem.setTarget(angle);
         }, turretSubsystem);
@@ -373,26 +383,28 @@ public class RobotContainer {
 
     public void shootWithDistanceMap() {
         // double distance = TurretCalculator
-        //         .getDistanceToTarget(driveSubsystem.getTurretPose(), Constants.FieldConstants.HUB_BLUE)
-        //         .in(Units.Meters);
+        // .getDistanceToTarget(driveSubsystem.getTurretPose(),
+        // Constants.FieldConstants.HUB_BLUE)
+        // .in(Units.Meters);
 
         // ShotData shot = Constants.SHOT_MAP.get(distance);
 
         ShotData shot = TurretCalculator.iterativeMovingShotFromMap(
-                driveSubsystem.getTurretPose(), 
+                driveSubsystem.getTurretPose(),
                 driveSubsystem.getFieldVelocity(),
                 Constants.FieldConstants.HUB_BLUE,
                 5);
-        
+
         Pose2d thegoodposemaybe = new Pose2d(shot.getTarget().toTranslation2d(), Rotation2d.kZero);
 
         driveSubsystem.field.getObject("predicted-hub").setPose(thegoodposemaybe);
-        
-        Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(), shot.getTarget()); 
 
-        double angle = MathUtil.clamp(azimuthAngle.in(Degrees), Constants.TURRET_MIN_ANGLE.in(Degrees), Constants.TURRET_MAX_ANGLE.in(Degrees));
+        Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(), shot.getTarget());
+
+        double angle = MathUtil.clamp(azimuthAngle.in(Degrees), Constants.TURRET_MIN_ANGLE.in(Degrees),
+                Constants.TURRET_MAX_ANGLE.in(Degrees));
         turretSubsystem.setTarget(angle);
-        
+
         hoodSubsystem.setPos(shot.hoodAngle());
         shooterSubsystem.setVelocity(shot.getAngularExitVelocity());
     }

@@ -4,6 +4,7 @@
 
 package frc.robot.shooter;
 
+import com.ctre.phoenix6.Orchestra;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
@@ -34,6 +35,8 @@ public class ShooterSubsystem extends SubsystemBase {
     public GenericEntry targetRPM;
     public GenericEntry RPMMod;
 
+    public Orchestra orchestra;
+
     /** Creates a new ExampleSubsystem. */
     public ShooterSubsystem() {
         primaryShooter = new TalonFX(Constants.PRIMARY_SHOOTER);
@@ -48,7 +51,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         RPMMod = Shuffleboard.getTab("pid").add("RPM-MODIFIER", 1).getEntry();
 
-        targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 6000).getEntry();
+        targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 3000).getEntry();
 
         secondaryShooter.setControl(new Follower(Constants.PRIMARY_SHOOTER, MotorAlignmentValue.Opposed));
 
@@ -65,6 +68,12 @@ public class ShooterSubsystem extends SubsystemBase {
         velocityRequest = new VelocityVoltage(0).withSlot(0);
         voltageRequest = new VoltageOut(0);
         dutyCycleRequest = new DutyCycleOut(0);
+
+        orchestra = new Orchestra();
+
+        orchestra.addInstrument(secondaryShooter);
+
+        orchestra.loadMusic("mc.chrp");
 
         this.sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(
                 voltage -> {

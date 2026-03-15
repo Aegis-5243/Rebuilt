@@ -65,6 +65,11 @@ public class DriveSubsystem extends SubsystemBase {
   public SimpleMotorFeedforward frFeedforward;
   public SimpleMotorFeedforward blFeedforward;
   public SimpleMotorFeedforward brFeedforward;
+  
+  public PIDController flPID;
+  public PIDController frPID;
+  public PIDController blPID;
+  public PIDController brPID;
 
   public CustomMecanumDrive drive;
   public MecanumDriveKinematics kinematics;
@@ -121,6 +126,11 @@ public class DriveSubsystem extends SubsystemBase {
     blFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
     brFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
 
+    flPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+    frPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+    blPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+    brPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+
     flMotor.setMaxSpeed(5000);
     frMotor.setMaxSpeed(5000);
     blMotor.setMaxSpeed(5000);
@@ -162,10 +172,10 @@ public class DriveSubsystem extends SubsystemBase {
     /*** m/s to rpm */
     double metersPerSecondToRPM = 60 / Constants.WHEEL_DISTANCE_PER_MOTOR_REV;
     drive = new CustomMecanumDrive(
-        v -> flMotor.setVoltage(flFeedforward.calculate(v)),
-        v -> blMotor.setVoltage(blFeedforward.calculate(v)),
-        v -> frMotor.setVoltage(frFeedforward.calculate(v)),
-        v -> brMotor.setVoltage(brFeedforward.calculate(v)));
+        v -> flMotor.setVoltage(flFeedforward.calculate(v) + flPID.calculate(flEncoder.getRate(), v)),
+        v -> blMotor.setVoltage(blFeedforward.calculate(v) + blPID.calculate(blEncoder.getRate(), v)),
+        v -> frMotor.setVoltage(frFeedforward.calculate(v) + frPID.calculate(frEncoder.getRate(), v)),
+        v -> brMotor.setVoltage(brFeedforward.calculate(v) + brPID.calculate(brEncoder.getRate(), v)));
     // v -> flMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
     // 1)),
     // v -> blMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
@@ -184,7 +194,7 @@ public class DriveSubsystem extends SubsystemBase {
         131.0 / 133.0,
         138.0 / 161.0);
 
-    poseEstimator = new MecanumDrivePoseEstimator(kinematics, gyro.getRotation2d(),
+    poseEstimator = new MecanumDrivePoseEstimator(kinematics, new Rotation2d(-gyro.getYaw()),
         new MecanumDriveWheelPositions(), Pose2d.kZero);
 
     this.sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(
@@ -217,8 +227,8 @@ public class DriveSubsystem extends SubsystemBase {
         },
         this));
 
-    if (DriverStation.isTest()) {
-      tab.addDouble("gyroYaw", gyro::getAngle);
+    // if (DriverStation.isTest()) {
+      tab.addDouble("gyroYaw", () -> gyro.getAngle());
       tab.add("flMotor", flMotor);
       tab.add("frMotor", frMotor);
       tab.add("blMotor", blMotor);
@@ -250,7 +260,7 @@ public class DriveSubsystem extends SubsystemBase {
       
       tab.addDouble("dist_to_hub",
       () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
-    }
+    // }
     
     tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
 
@@ -438,7 +448,7 @@ public class DriveSubsystem extends SubsystemBase {
    * Updates current pose using encoder positions
    */
   public void updatePose() {
-    poseEstimator.update(gyro.getRotation2d(), new MecanumDriveWheelPositions(
+    poseEstimator.update(Rotation2d.fromDegrees(-gyro.getYaw()), new MecanumDriveWheelPositions(
         Units.Meters.of(flEncoder.getDistance()),
         Units.Meters.of(frEncoder.getDistance()),
         Units.Meters.of(blEncoder.getDistance()),
