@@ -109,4 +109,16 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'getReverseRollers'");
     }
 
+    @Override
+    public double getRightX() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRightX'");
+    }
+
+    @Override
+    public double getRightY() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRightY'");
+    }
+
 }

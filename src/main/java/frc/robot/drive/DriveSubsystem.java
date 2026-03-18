@@ -65,7 +65,7 @@ public class DriveSubsystem extends SubsystemBase {
   public SimpleMotorFeedforward frFeedforward;
   public SimpleMotorFeedforward blFeedforward;
   public SimpleMotorFeedforward brFeedforward;
-  
+
   public PIDController flPID;
   public PIDController frPID;
   public PIDController blPID;
@@ -93,6 +93,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   public GenericEntry volts;
   private TurretSubsystem turretSubsystem;
+
+  boolean isUsingFlickStick = false;
 
   /** Creates a new ExampleSubsystem. */
   public DriveSubsystem(TurretSubsystem turretSubsystem) {
@@ -228,46 +230,52 @@ public class DriveSubsystem extends SubsystemBase {
         this));
 
     // if (DriverStation.isTest()) {
-      tab.addDouble("gyroYaw", () -> gyro.getAngle());
-      tab.add("flMotor", flMotor);
-      tab.add("frMotor", frMotor);
-      tab.add("blMotor", blMotor);
-      tab.add("brMotor", brMotor);
+    tab.addDouble("gyroYaw", () -> gyro.getAngle());
+    tab.add("flMotor", flMotor);
+    tab.add("frMotor", frMotor);
+    tab.add("blMotor", blMotor);
+    tab.add("brMotor", brMotor);
 
-      tab.add(drive);
-      tab.addDouble("flMotorTarget", () -> flMotor.getPIDTarget());
-      tab.addDouble("frMotorTarget", () -> frMotor.getPIDTarget());
-      tab.addDouble("blMotorTarget", () -> blMotor.getPIDTarget());
-      tab.addDouble("brMotorTarget", () -> brMotor.getPIDTarget());
+    tab.add(drive);
+    tab.addDouble("flMotorTarget", () -> flMotor.getPIDTarget());
+    tab.addDouble("frMotorTarget", () -> frMotor.getPIDTarget());
+    tab.addDouble("blMotorTarget", () -> blMotor.getPIDTarget());
+    tab.addDouble("brMotorTarget", () -> brMotor.getPIDTarget());
 
-      ShuffleboardTab othertab = Shuffleboard.getTab("more drivetrain");
-      othertab.addDouble("flMotorHBridge", () -> flMotor.get());
-      othertab.addDouble("frMotorHBridge", () -> frMotor.get());
-      othertab.addDouble("blMotorHBridge", () -> blMotor.get());
-      othertab.addDouble("brMotorHBridge", () -> brMotor.get());
-      // ShuffleboardLayout encoderLayout =
-      // tab.getLayout("encoders", "kList");
+    ShuffleboardTab othertab = Shuffleboard.getTab("more drivetrain");
+    othertab.addDouble("flMotorHBridge", () -> flMotor.get());
+    othertab.addDouble("frMotorHBridge", () -> frMotor.get());
+    othertab.addDouble("blMotorHBridge", () -> blMotor.get());
+    othertab.addDouble("brMotorHBridge", () -> brMotor.get());
+    // ShuffleboardLayout encoderLayout =
+    // tab.getLayout("encoders", "kList");
 
-      tab.add("flEncoder", flEncoder);
-      tab.add("frEncoder", frEncoder);
-      tab.add("blEncoder", blEncoder);
-      tab.add("brEncoder", brEncoder);
-      tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
-      tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
-      tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
-      tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
-      
-      
-      tab.addDouble("dist_to_hub",
-      () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
-    // }
+    tab.add("flEncoder", flEncoder);
+    tab.add("frEncoder", frEncoder);
+    tab.add("blEncoder", blEncoder);
+    tab.add("brEncoder", brEncoder);
+    tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
+    tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
+    tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
+    tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
     
-    tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
+    tab.addBoolean("Field Centric Enabled", () -> isUsingFlickStick);
+
+    tab.addDouble("dist_to_hub",
+        () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
+    // }
+
+    tab.addDoubleArray("gyro", () -> {
+      double[] dub = { gyro.getYaw(), gyro.getPitch(), gyro.getRoll() };
+      return dub;
+    });
 
     tab.addDouble("Shiftt Time Remains", () -> remainingHubSwitchTime());
     tab.addBoolean("Hub active", () -> isHubActive());
 
-    tab.addDouble("Meters to Hub", () -> (TurretCalculator.getDistanceToTarget(getTurretPose   (), Constants.FieldConstants.HUB_BLUE)).in(Units.Meters));
+    tab.addDouble("Meters to Hub",
+        () -> (TurretCalculator.getDistanceToTarget(getTurretPose(), Constants.FieldConstants.HUB_BLUE))
+            .in(Units.Meters));
 
     tab.addDouble("Velocity X", () -> getVelocity().vxMetersPerSecond);
     tab.addDouble("Velocity Y", () -> getVelocity().vyMetersPerSecond);
@@ -329,7 +337,7 @@ public class DriveSubsystem extends SubsystemBase {
     // double rot = getPose().getRotation;
     Translation2d t = new Translation2d(xSpeed, ySpeed).rotateBy(getPose().getRotation().times(-1));
     xSpeed = t.getX();
-    ySpeed = t.getY();
+    ySpeed = t.getY() * 1.5;
     drive.driveCartesian(-xSpeed, ySpeed, zRotation);
   }
 
@@ -360,7 +368,7 @@ public class DriveSubsystem extends SubsystemBase {
   public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric)
       .withName("driveControllerFieldCentric");
 
-  public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
+  public void controllerDriveFieldCentricFacingDir(Rotation2d dir, double turnStrength) {
     double driveX = Constants.controller.getDriveX();
     double driveY = -Constants.controller.getDriveY();
 
@@ -379,10 +387,16 @@ public class DriveSubsystem extends SubsystemBase {
     rotController.setSetpoint(angle);
     rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
 
+    rotSpeed *= turnStrength;
+
     rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
     // }
 
     driveFieldCentric(driveX, driveY, rotSpeed);
+  }
+
+  public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
+    controllerDriveFieldCentricFacingDir(dir, 1.0);
   }
 
   public void controllerDriveFieldCentricFacingPose(double x, double y) {
@@ -395,6 +409,37 @@ public class DriveSubsystem extends SubsystemBase {
     } // Don't auto rotate when less than 10cm away from target
 
     controllerDriveFieldCentricFacingDir(dir);
+  }
+
+  public void controllerDriveRobotCentricFacingDir(Rotation2d dir, double turnStrength) {
+    double driveX = Constants.controller.getDriveX();
+    double driveY = -Constants.controller.getDriveY();
+
+    driveX = Math.signum(driveX) * driveX * driveX;
+    driveY = Math.signum(driveY) * driveY * driveY;
+
+    double speed = getMaxSpeed();
+
+    driveX *= speed;
+    driveY *= speed;
+
+    double rotSpeed = 0;
+
+    double angle = dir.getDegrees();
+
+    rotController.setSetpoint(angle);
+    rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
+
+    rotSpeed *= turnStrength;
+
+    rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
+    // }
+
+    driveRobotCentric(driveX, driveY, rotSpeed);
+  }
+
+  public void controllerDriveRobotCentricFacingDir(Rotation2d dir) {
+    controllerDriveRobotCentricFacingDir(dir, 1.0);
   }
 
   public Command controllerDriveFieldCentricFacingPoseCommand(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
@@ -410,6 +455,50 @@ public class DriveSubsystem extends SubsystemBase {
     }, () -> {
       controllerDriveFieldCentricFacingDir(snapDirection);
     });
+  }
+
+  public void controllerDriveFieldCentricFlickStick() {
+    double x = Constants.controller.getRightX();
+    double y = Constants.controller.getRightY();
+
+    double dist = Math.sqrt(x * x + y * y);
+    double angle = Math.atan2(x, y);
+
+    dist = MathUtil.clamp(dist, 0.0, 1.0);
+    if (dist < 0.05)
+      dist = 0;
+
+    isUsingFlickStick = true;
+    controllerDriveFieldCentricFacingDir(
+        Rotation2d.fromRadians(angle).rotateBy(Rotation2d.k180deg),
+        dist);
+
+  }
+
+  public Command controllerDriveFieldCentricFlickStickCommand() {
+    return runEnd(this::controllerDriveFieldCentricFlickStick, () -> isUsingFlickStick = false);
+  }
+
+  public void controllerDriveRobotCentricFlickStick() {
+    double x = Constants.controller.getRightX();
+    double y = Constants.controller.getRightY();
+
+    double dist = Math.sqrt(x * x + y * y);
+    double angle = Math.atan2(x, y);
+
+    dist = MathUtil.clamp(dist, 0.0, 1.0);
+    if (dist < 0.05)
+      dist = 0;
+
+    isUsingFlickStick = true;
+    controllerDriveRobotCentricFacingDir(
+        Rotation2d.fromRadians(angle).rotateBy(Rotation2d.k180deg),
+        dist);
+
+  }
+
+  public Command controllerDriveRobotCentricFlickStickCommand() {
+    return runEnd(this::controllerDriveRobotCentricFlickStick, () -> isUsingFlickStick = false);
   }
 
   // public void driveRobotCentric(DoubleSupplier xSpeed, DoubleSupplier ySpeed,
@@ -488,8 +577,8 @@ public class DriveSubsystem extends SubsystemBase {
     Pose2d pose = new Pose2d(Kinematics.HUB_POSITION_2D.plus(new Translation2d(-1, 0)), Rotation2d.kZero);
     resetPos(pose);
     // gyro.setAngleAdjustment(
-    //     gyro.getAngleAdjustment()
-    //         + pose.getRotation().getDegrees() - gyro.getAngle());
+    // gyro.getAngleAdjustment()
+    // + pose.getRotation().getDegrees() - gyro.getAngle());
 
     currentVelocity = new ChassisSpeeds();
   }
@@ -535,15 +624,18 @@ public class DriveSubsystem extends SubsystemBase {
         blEncoder.getRate(),
         brEncoder.getRate()));
 
-    double inter = 0;  
+    double inter = 0;
 
     currentVelocity = speeds;
 
     // currentVelocity = new Transform2d(
-    //     MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(), inter),
-    //     MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(), inter),
-    //     Rotation2d.fromRadians(
-    //         MathUtil.interpolate(speeds.omegaRadiansPerSecond, currentVelocity.getRotation().getRadians(), inter)));
+    // MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(),
+    // inter),
+    // MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(),
+    // inter),
+    // Rotation2d.fromRadians(
+    // MathUtil.interpolate(speeds.omegaRadiansPerSecond,
+    // currentVelocity.getRotation().getRadians(), inter)));
   }
 
   public ChassisSpeeds getVelocity() {

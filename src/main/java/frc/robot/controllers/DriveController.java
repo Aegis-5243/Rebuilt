@@ -22,6 +22,9 @@ public interface DriveController {
      */
     public double getDriveTurn();
 
+    public double getRightX();
+    public double getRightY();
+
     /**
      * Gets the boost multiplier from the controller, in the range [0, 1].
      * This is used to increase the speed of the robot when a boost button is held.

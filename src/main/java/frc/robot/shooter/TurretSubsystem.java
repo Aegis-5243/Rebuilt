@@ -4,35 +4,28 @@
 
 package frc.robot.shooter;
 
-import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkBase.ControlType;
+import static edu.wpi.first.units.Units.Degrees;
 
-import javax.lang.model.util.ElementScanner14;
-
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.ColorSensorV3;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.AbsoluteEncoderConfig;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SoftLimitConfig;
-import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.WrappingDutyCycleEncoder;
 import frc.robot.Constants;
-import pabeles.concurrency.ConcurrencyOps.Reset;
 
 public class TurretSubsystem extends SubsystemBase {
     public SparkMax turret;
@@ -61,8 +54,8 @@ public class TurretSubsystem extends SubsystemBase {
                                 .maxOutput(0.5)
                                 .minOutput(-0.5))
                         .apply(new SoftLimitConfig()
-                                .forwardSoftLimit(90).forwardSoftLimitEnabled(true)
-                                .reverseSoftLimit(-90).reverseSoftLimitEnabled(true)),
+                                .forwardSoftLimit(Constants.TURRET_MAX_ANGLE.in(Degrees)).forwardSoftLimitEnabled(true)
+                                .reverseSoftLimit(Constants.TURRET_MIN_ANGLE.in(Degrees)).reverseSoftLimitEnabled(true)),
                 ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         colorSensor = new ColorSensorV3(I2C.Port.kMXP);

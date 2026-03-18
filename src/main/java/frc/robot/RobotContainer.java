@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -112,7 +113,7 @@ public class RobotContainer {
 
         Shuffleboard.getTab("Teleoperated").add("CS", CommandScheduler.getInstance());
 
-        CameraServer.startAutomaticCapture(0);
+        // CameraServer.startAutomaticCapture(0);
 
         // Configure the trigger bindings
         configureBindings();
@@ -212,22 +213,7 @@ public class RobotContainer {
                                 () -> shooterSubsystem.setVelocity(Units.RPM.of(4500))),
                         new SequentialCommandGroup(
                                 new WaitCommand(.5),
-                                new RepeatCommand(
-                                        new WaitCommand(3).deadlineFor(
-                                                rollerSubsystem.run(
-                                                        () -> rollerSubsystem
-                                                                .set(
-                                                                        .15,
-                                                                        Units.RPM.of(3500))))
-                                                .andThen(
-                                                        new WaitCommand(0.5)
-                                                                .deadlineFor(
-                                                                        rollerSubsystem.run(
-                                                                                () -> rollerSubsystem
-                                                                                        .set(
-                                                                                                -.15,
-                                                                                                Units.RPM
-                                                                                                        .of(3500))))))),
+                                rollerAndShuffleCommand()),
                         // hoodSubsystem.run(() -> hoodSubsystem.setPos(Utilites
                         // .distanceToConfig(Units.Meters.of(
                         // Kinematics.HUB_POSITION_2D.getDistance(
@@ -241,18 +227,40 @@ public class RobotContainer {
         autoChooser.addOption("climb", new SequentialCommandGroup(
                 new ParallelCommandGroup(
                         new ParallelDeadlineGroup(
-                                new WaitCommand(1),
+                                new WaitCommand(2),
                                 new InstantCommand(() -> driveSubsystem
-                                        .resetPos(new Pose2d(Units.Inches.of(/*76.5*/136), Units.Inches.of(/*150.5*/76.5),
+                                        .resetPos(new Pose2d(Units.Inches
+                                                .of(/* 76.5 */136),
+                                                Units.Inches.of(/*
+                                                                 * 150.5
+                                                                 */76.5),
                                                 Rotation2d.k180deg))),
-                                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0.7, 0, 0)),
-                                new RunCommand(() -> turretSubsystem.setTarget(25), turretSubsystem)),
-                        climbSubsystem.runToSetpointCommand(7)),
-
+                                driveSubsystem.run(() -> driveSubsystem
+                                        .driveRobotCentric(0.7, 0, 0)),
+                                new RunCommand(() -> turretSubsystem.setTarget(55),
+                                        turretSubsystem))
+                                .andThen(shootWithDistanceMapCommand()
+                                        .alongWith(new WaitCommand(1)
+                                                .andThen(rollerAndShuffleCommand().alongWith(
+                                                        intakeSubsystem.setIntakeCommand(0.9))))
+                                        .withTimeout(6)),
+                        climbSubsystem.runToSetpointCommand(7.1)),
+                rollerSubsystem.runOnce(() -> rollerSubsystem.set(0)),
+                shooterSubsystem.runOnce(() -> shooterSubsystem.setDutyCycle(0)),
                 // new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 - 1),
-                //         driveSubsystem.getPose().getMeasureY(), Rotation2d.k180deg)).withDeadline(new WaitCommand(2)),
-                new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 - 1), Units.Inches.of(123.97 - 15.75), Rotation2d.k180deg)),
-                climbSubsystem.runToSetpointCommand(2.0)));
+                // driveSubsystem.getPose().getMeasureY(), Rotation2d.k180deg)).withDeadline(new
+                // WaitCommand(2)),
+                new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 + 2.5),
+                        Units.Inches.of(123.97 - 15.75 + 5), Rotation2d.k180deg), 1).raceWith(new WaitCommand(4)),
+                Commands.run(() -> driveSubsystem.driveFieldCentric(0, 1, 0), driveSubsystem)
+                        .withDeadline(new WaitCommand(1)),
+                Commands.run(() -> driveSubsystem.driveFieldCentric(-0.5, 0, 0), driveSubsystem)
+                        .withDeadline(new WaitCommand(1.5)),
+                new InstantCommand(() -> {
+                    System.out.println("align end");
+                }),
+                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, -0.4, 0)).withDeadline(
+                        new WaitCommand(1).andThen(climbSubsystem.runToSetpointCommand(2.0)))));
 
         // XboxController asdqwe = new XboxController(1);
 
@@ -262,7 +270,27 @@ public class RobotContainer {
 
         Shuffleboard.getTab("Teleoperated").add(autoChooser);
         Shuffleboard.getTab("Climb").add(new AlignToPose(driveSubsystem,
-                new Pose2d(Units.Inches.of(41.755 - 1), Units.Inches.of(123.97 - 15.75 / 2), Rotation2d.k180deg)));
+                new Pose2d(Units.Inches.of(41.755 - 1), Units.Inches.of(123.97 - 15.75 / 2),
+                        Rotation2d.k180deg)));
+    }
+
+    private Command rollerAndShuffleCommand() {
+        return new RepeatCommand(
+                new WaitCommand(3).deadlineFor(
+                        rollerSubsystem.run(
+                                () -> rollerSubsystem
+                                        .set(
+                                                .5,
+                                                Units.RPM.of(3000))))
+                        .andThen(
+                                new WaitCommand(0.5)
+                                        .deadlineFor(
+                                                rollerSubsystem.run(
+                                                        () -> rollerSubsystem
+                                                                .set(
+                                                                        -.5,
+                                                                        Units.RPM
+                                                                                .of(3000))))));
     }
 
     /**
@@ -286,7 +314,7 @@ public class RobotContainer {
 
         // Drive field centric
         new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
-                .whileTrue(driveSubsystem.controllerDriveFieldCentricCommand);
+                .toggleOnTrue(driveSubsystem.controllerDriveFieldCentricFlickStickCommand());
 
         // // Drive field centric facing origin
         // new Trigger(() ->
@@ -348,7 +376,8 @@ public class RobotContainer {
     public Command faceHubCommand() {
         return Commands.run(() -> {
             double angle = Kinematics
-                    .getHubTransform2d(driveSubsystem.botToTurret(driveSubsystem.getFutureRobotPose2d()))
+                    .getHubTransform2d(driveSubsystem
+                            .botToTurret(driveSubsystem.getFutureRobotPose2d()))
                     .getRotation().getDegrees();
 
             // double distance = TurretCalculator

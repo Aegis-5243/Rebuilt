@@ -75,7 +75,7 @@ public final class Constants {
     public static final double TURRET_DEGREES_PER_REV = 7.5; /* original 7.875 */
 
     /*** Degrees */
-    public static final Angle TURRET_MAX_ANGLE = Degrees.of(90);
+    public static final Angle TURRET_MAX_ANGLE = Degrees.of(55);
     public static final Angle TURRET_MIN_ANGLE = Degrees.of(-90);
     /*** Distance between center of turret and limelight lens */
     public static final Distance TURRET_RADIUS = Units.Inches.of(7.5);
