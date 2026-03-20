@@ -4,6 +4,7 @@
 
 package frc.robot.shooter;
 
+import com.ctre.phoenix6.Orchestra;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
@@ -15,6 +16,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -27,10 +29,13 @@ public class ShooterSubsystem extends SubsystemBase {
     public VelocityVoltage velocityRequest;
     public VoltageOut voltageRequest;
     public DutyCycleOut dutyCycleRequest;
-
+    
     public SysIdRoutine sysId;
-
+    
     public GenericEntry targetRPM;
+    public GenericEntry RPMMod;
+
+    public Orchestra orchestra;
 
     /** Creates a new ExampleSubsystem. */
     public ShooterSubsystem() {
@@ -44,7 +49,9 @@ public class ShooterSubsystem extends SubsystemBase {
         Shuffleboard.getTab("pid").addDouble("motor_curr_target", () -> Units.RotationsPerSecond
                 .of(primaryShooter.getClosedLoopReference().getValueAsDouble()).in(Units.RPM));
 
-        targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 6000).getEntry();
+        RPMMod = Shuffleboard.getTab("pid").add("RPM-MODIFIER", 1).getEntry();
+
+        targetRPM = Shuffleboard.getTab("pid").add("RPM-TARGET", 3000).getEntry();
 
         secondaryShooter.setControl(new Follower(Constants.PRIMARY_SHOOTER, MotorAlignmentValue.Opposed));
 
@@ -62,6 +69,12 @@ public class ShooterSubsystem extends SubsystemBase {
         voltageRequest = new VoltageOut(0);
         dutyCycleRequest = new DutyCycleOut(0);
 
+        orchestra = new Orchestra();
+
+        orchestra.addInstrument(secondaryShooter);
+
+        orchestra.loadMusic("mc.chrp");
+
         this.sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(
                 voltage -> {
                     primaryShooter.setControl(voltageRequest.withOutput(voltage));
@@ -77,11 +90,13 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void setVelocity(AngularVelocity speed) {
+        speed = speed.times(RPMMod.getDouble(1));
         primaryShooter.setControl(velocityRequest.withVelocity(speed).withFeedForward(Constants.SHOOTER_kF));
 
     }
 
     public void setDutyCycle(double speed) {
+        speed = speed * RPMMod.getDouble(1);
         primaryShooter.setControl(dutyCycleRequest.withOutput(speed));
     }
 

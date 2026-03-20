@@ -30,20 +30,25 @@ public class RollerSubsystem extends SubsystemBase {
         roller = new SparkMax(Constants.ROLLER, MotorType.kBrushless);
         kicker = new SparkMax(Constants.KICKER, MotorType.kBrushless);
 
-        kicker.configure(new SparkMaxConfig().apply(new ClosedLoopConfig().pid(0.00065, 0, 0.02).apply(new FeedForwardConfig().kS(7))), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        kicker.configure(new SparkMaxConfig().apply(new ClosedLoopConfig().pid(0.000065, 0, 0.07).apply(new FeedForwardConfig().kS(7))), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         kickerSpeed = Shuffleboard.getTab("roller").add("kicker-speed-setter", 3000).getEntry();
         Shuffleboard.getTab("roller").addDouble("kicker-rpm", () -> kicker.getEncoder().getVelocity());
-
-
     }
 
     public void set(double speed) {
-        roller.set(speed);
+        double rollerSpeed = speed;
+        if (Constants.controller.getReverseRollers()) {
+            rollerSpeed = -0.5;
+        }
+        roller.set(rollerSpeed);
         kicker.set(speed);
     }
 
     public void set(double rollerSpeed, AngularVelocity kickerSpeed) {
+        if (Constants.controller.getReverseRollers()) {
+            rollerSpeed = -0.5;
+        }
         roller.set(rollerSpeed);
         kicker.getClosedLoopController().setSetpoint(-kickerSpeed.in(Units.RPM), ControlType.kVelocity);
     }

@@ -91,4 +91,34 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'allShoot'");
     }
 
+    @Override
+    public boolean climbUp() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'climbUp'");
+    }
+
+    @Override
+    public boolean climbDown() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'climbDown'");
+    }
+
+    @Override
+    public boolean getReverseRollers() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getReverseRollers'");
+    }
+
+    @Override
+    public double getRightX() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRightX'");
+    }
+
+    @Override
+    public double getRightY() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRightY'");
+    }
+
 }

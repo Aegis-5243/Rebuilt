@@ -47,6 +47,7 @@ import frc.lib.CustomMecanumDriveKinematics;
 import frc.robot.Constants;
 import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.Kinematics;
+import frc.robot.utils.TurretCalculator;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -65,6 +66,11 @@ public class DriveSubsystem extends SubsystemBase {
   public SimpleMotorFeedforward blFeedforward;
   public SimpleMotorFeedforward brFeedforward;
 
+  public PIDController flPID;
+  public PIDController frPID;
+  public PIDController blPID;
+  public PIDController brPID;
+
   public CustomMecanumDrive drive;
   public MecanumDriveKinematics kinematics;
   public MecanumDrivePoseEstimator poseEstimator;
@@ -79,9 +85,7 @@ public class DriveSubsystem extends SubsystemBase {
   public DoubleSupplier limelightTimestampSupplier;
   public Supplier<Angle> turretAngle;
   public Supplier<Boolean> doUpdate;
-  public Supplier<Boolean> limelightMt2Supplier;
-
-  private GenericEntry temp;
+  public BooleanSupplier limelightMt2Supplier;
 
   private PIDController rotController = new PIDController(0.04, 0.0, 0.0);
 
@@ -89,6 +93,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   public GenericEntry volts;
   private TurretSubsystem turretSubsystem;
+
+  boolean isUsingFlickStick = false;
 
   /** Creates a new ExampleSubsystem. */
   public DriveSubsystem(TurretSubsystem turretSubsystem) {
@@ -121,6 +127,11 @@ public class DriveSubsystem extends SubsystemBase {
     frFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
     blFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
     brFeedforward = new SimpleMotorFeedforward(Constants.DRIVE_kS, Constants.DRIVE_kV, Constants.DRIVE_kA);
+
+    flPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+    frPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+    blPID = new PIDController(Constants.DRIVE_kP, 0, 0);
+    brPID = new PIDController(Constants.DRIVE_kP, 0, 0);
 
     flMotor.setMaxSpeed(5000);
     frMotor.setMaxSpeed(5000);
@@ -163,10 +174,10 @@ public class DriveSubsystem extends SubsystemBase {
     /*** m/s to rpm */
     double metersPerSecondToRPM = 60 / Constants.WHEEL_DISTANCE_PER_MOTOR_REV;
     drive = new CustomMecanumDrive(
-        v -> flMotor.setVoltage(flFeedforward.calculate(v)),
-        v -> blMotor.setVoltage(blFeedforward.calculate(v)),
-        v -> frMotor.setVoltage(frFeedforward.calculate(v)),
-        v -> brMotor.setVoltage(brFeedforward.calculate(v)));
+        v -> flMotor.setVoltage(flFeedforward.calculate(v) + flPID.calculate(flEncoder.getRate(), v)),
+        v -> blMotor.setVoltage(blFeedforward.calculate(v) + blPID.calculate(blEncoder.getRate(), v)),
+        v -> frMotor.setVoltage(frFeedforward.calculate(v) + frPID.calculate(frEncoder.getRate(), v)),
+        v -> brMotor.setVoltage(brFeedforward.calculate(v) + brPID.calculate(brEncoder.getRate(), v)));
     // v -> flMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
     // 1)),
     // v -> blMotor.set(MathUtil.clamp(0.5 * v / (Constants.DRIVE_MAX_SPEED), -1,
@@ -185,7 +196,7 @@ public class DriveSubsystem extends SubsystemBase {
         131.0 / 133.0,
         138.0 / 161.0);
 
-    poseEstimator = new MecanumDrivePoseEstimator(kinematics, gyro.getRotation2d(),
+    poseEstimator = new MecanumDrivePoseEstimator(kinematics, new Rotation2d(-gyro.getYaw()),
         new MecanumDriveWheelPositions(), Pose2d.kZero);
 
     this.sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(
@@ -218,7 +229,8 @@ public class DriveSubsystem extends SubsystemBase {
         },
         this));
 
-    tab.addDouble("gyroYaw", gyro::getAngle);
+    // if (DriverStation.isTest()) {
+    tab.addDouble("gyroYaw", () -> gyro.getAngle());
     tab.add("flMotor", flMotor);
     tab.add("frMotor", frMotor);
     tab.add("blMotor", blMotor);
@@ -242,18 +254,32 @@ public class DriveSubsystem extends SubsystemBase {
     tab.add("frEncoder", frEncoder);
     tab.add("blEncoder", blEncoder);
     tab.add("brEncoder", brEncoder);
-    tab.addDoubleArray("gyro", () -> {double[] dub = {gyro.getYaw(), gyro.getPitch(), gyro.getRoll()}; return dub;});
     tab.addDouble("poseX", () -> getPose().getMeasureX().in(Units.Inches));
     tab.addDouble("poseY", () -> getPose().getMeasureY().in(Units.Inches));
     tab.addDouble("poseYaw", () -> getPose().getRotation().getDegrees());
     tab.addDouble("feedforward-res", () -> flFeedforward.calculateWithVelocities(0, 2));
+    
+    tab.addBoolean("Field Centric Enabled", () -> isUsingFlickStick);
+
+    tab.addDouble("dist_to_hub",
+        () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
+    // }
+
+    tab.addDoubleArray("gyro", () -> {
+      double[] dub = { gyro.getYaw(), gyro.getPitch(), gyro.getRoll() };
+      return dub;
+    });
 
     tab.addDouble("Shiftt Time Remains", () -> remainingHubSwitchTime());
     tab.addBoolean("Hub active", () -> isHubActive());
 
-    tab.addDouble("dist_to_hub",
-        () -> (Kinematics.HUB_POSITION_2D.getDistance(this.botToTurret(this.getPose()).getTranslation())));
-    // temp = tab.add("", Constants.shooter_configs).getEntry();
+    tab.addDouble("Meters to Hub",
+        () -> (TurretCalculator.getDistanceToTarget(getTurretPose(), Constants.FieldConstants.HUB_BLUE))
+            .in(Units.Meters));
+
+    tab.addDouble("Velocity X", () -> getVelocity().vxMetersPerSecond);
+    tab.addDouble("Velocity Y", () -> getVelocity().vyMetersPerSecond);
+    tab.addDouble("Velocity deg", () -> Math.toDegrees(getVelocity().omegaRadiansPerSecond));
 
     field = new Field2d();
     tab.add("Field", field);
@@ -277,7 +303,7 @@ public class DriveSubsystem extends SubsystemBase {
     doUpdate = supplier;
   }
 
-  public void setLimelightMt2Supplier(Supplier<Boolean> limelightMt2Supplier) {
+  public void setLimelightMt2Supplier(BooleanSupplier limelightMt2Supplier) {
     this.limelightMt2Supplier = limelightMt2Supplier;
   }
 
@@ -311,7 +337,7 @@ public class DriveSubsystem extends SubsystemBase {
     // double rot = getPose().getRotation;
     Translation2d t = new Translation2d(xSpeed, ySpeed).rotateBy(getPose().getRotation().times(-1));
     xSpeed = t.getX();
-    ySpeed = t.getY();
+    ySpeed = t.getY() * 1.5;
     drive.driveCartesian(-xSpeed, ySpeed, zRotation);
   }
 
@@ -342,7 +368,7 @@ public class DriveSubsystem extends SubsystemBase {
   public Command controllerDriveFieldCentricCommand = run(this::controllerDriveFieldCentric)
       .withName("driveControllerFieldCentric");
 
-  public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
+  public void controllerDriveFieldCentricFacingDir(Rotation2d dir, double turnStrength) {
     double driveX = Constants.controller.getDriveX();
     double driveY = -Constants.controller.getDriveY();
 
@@ -361,10 +387,16 @@ public class DriveSubsystem extends SubsystemBase {
     rotController.setSetpoint(angle);
     rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
 
+    rotSpeed *= turnStrength;
+
     rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
     // }
 
     driveFieldCentric(driveX, driveY, rotSpeed);
+  }
+
+  public void controllerDriveFieldCentricFacingDir(Rotation2d dir) {
+    controllerDriveFieldCentricFacingDir(dir, 1.0);
   }
 
   public void controllerDriveFieldCentricFacingPose(double x, double y) {
@@ -377,6 +409,37 @@ public class DriveSubsystem extends SubsystemBase {
     } // Don't auto rotate when less than 10cm away from target
 
     controllerDriveFieldCentricFacingDir(dir);
+  }
+
+  public void controllerDriveRobotCentricFacingDir(Rotation2d dir, double turnStrength) {
+    double driveX = Constants.controller.getDriveX();
+    double driveY = -Constants.controller.getDriveY();
+
+    driveX = Math.signum(driveX) * driveX * driveX;
+    driveY = Math.signum(driveY) * driveY * driveY;
+
+    double speed = getMaxSpeed();
+
+    driveX *= speed;
+    driveY *= speed;
+
+    double rotSpeed = 0;
+
+    double angle = dir.getDegrees();
+
+    rotController.setSetpoint(angle);
+    rotSpeed = rotController.calculate(getPose().getRotation().getDegrees());
+
+    rotSpeed *= turnStrength;
+
+    rotSpeed = MathUtil.clamp(rotSpeed, -Constants.DRIVE_MAX_SPEED, Constants.DRIVE_MAX_SPEED);
+    // }
+
+    driveRobotCentric(driveX, driveY, rotSpeed);
+  }
+
+  public void controllerDriveRobotCentricFacingDir(Rotation2d dir) {
+    controllerDriveRobotCentricFacingDir(dir, 1.0);
   }
 
   public Command controllerDriveFieldCentricFacingPoseCommand(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
@@ -392,6 +455,50 @@ public class DriveSubsystem extends SubsystemBase {
     }, () -> {
       controllerDriveFieldCentricFacingDir(snapDirection);
     });
+  }
+
+  public void controllerDriveFieldCentricFlickStick() {
+    double x = Constants.controller.getRightX();
+    double y = Constants.controller.getRightY();
+
+    double dist = Math.sqrt(x * x + y * y);
+    double angle = Math.atan2(x, y);
+
+    dist = MathUtil.clamp(dist, 0.0, 1.0);
+    if (dist < 0.05)
+      dist = 0;
+
+    isUsingFlickStick = true;
+    controllerDriveFieldCentricFacingDir(
+        Rotation2d.fromRadians(angle).rotateBy(Rotation2d.k180deg),
+        dist);
+
+  }
+
+  public Command controllerDriveFieldCentricFlickStickCommand() {
+    return runEnd(this::controllerDriveFieldCentricFlickStick, () -> isUsingFlickStick = false);
+  }
+
+  public void controllerDriveRobotCentricFlickStick() {
+    double x = Constants.controller.getRightX();
+    double y = Constants.controller.getRightY();
+
+    double dist = Math.sqrt(x * x + y * y);
+    double angle = Math.atan2(x, y);
+
+    dist = MathUtil.clamp(dist, 0.0, 1.0);
+    if (dist < 0.05)
+      dist = 0;
+
+    isUsingFlickStick = true;
+    controllerDriveRobotCentricFacingDir(
+        Rotation2d.fromRadians(angle).rotateBy(Rotation2d.k180deg),
+        dist);
+
+  }
+
+  public Command controllerDriveRobotCentricFlickStickCommand() {
+    return runEnd(this::controllerDriveRobotCentricFlickStick, () -> isUsingFlickStick = false);
   }
 
   // public void driveRobotCentric(DoubleSupplier xSpeed, DoubleSupplier ySpeed,
@@ -430,7 +537,7 @@ public class DriveSubsystem extends SubsystemBase {
    * Updates current pose using encoder positions
    */
   public void updatePose() {
-    poseEstimator.update(gyro.getRotation2d(), new MecanumDriveWheelPositions(
+    poseEstimator.update(Rotation2d.fromDegrees(-gyro.getYaw()), new MecanumDriveWheelPositions(
         Units.Meters.of(flEncoder.getDistance()),
         Units.Meters.of(frEncoder.getDistance()),
         Units.Meters.of(blEncoder.getDistance()),
@@ -443,8 +550,8 @@ public class DriveSubsystem extends SubsystemBase {
       field.getObject("limelight").setPose(limelightPoseSupplier.get());
 
       double visionRotStdev = 9999999;
-      if (limelightMt2Supplier != null && limelightMt2Supplier.get() == false) {
-        visionRotStdev = 2;
+      if (limelightMt2Supplier != null && limelightMt2Supplier.getAsBoolean() == false) {
+        visionRotStdev = 1.0;
         robotPose = cameraToBotRaw(limelightPoseSupplier.get());
       } else {
         robotPose = cameraToBot(limelightPoseSupplier.get());
@@ -460,14 +567,20 @@ public class DriveSubsystem extends SubsystemBase {
     return poseEstimator.getEstimatedPosition();
   }
 
-  public void resetPos() {
-    Pose2d pose = new Pose2d(0.0, 0.0, Rotation2d.kZero);
+  public void resetPos(Pose2d pose) {
     poseEstimator.resetPose(pose);
-    gyro.setAngleAdjustment(
-        gyro.getAngleAdjustment()
-            + pose.getRotation().getDegrees() - gyro.getAngle());
+    poseEstimator.resetPose(pose);
 
-    currentVelocity = new Transform2d();
+  }
+
+  public void resetPos() {
+    Pose2d pose = new Pose2d(Kinematics.HUB_POSITION_2D.plus(new Translation2d(-1, 0)), Rotation2d.kZero);
+    resetPos(pose);
+    // gyro.setAngleAdjustment(
+    // gyro.getAngleAdjustment()
+    // + pose.getRotation().getDegrees() - gyro.getAngle());
+
+    currentVelocity = new ChassisSpeeds();
   }
 
   public void voltageDrive() {
@@ -502,7 +615,7 @@ public class DriveSubsystem extends SubsystemBase {
    * changes in velocity
    */
 
-  Transform2d currentVelocity = new Transform2d();
+  ChassisSpeeds currentVelocity = new ChassisSpeeds();
 
   private void updateVelocity() {
     ChassisSpeeds speeds = kinematics.toChassisSpeeds(new MecanumDriveWheelSpeeds(
@@ -511,17 +624,26 @@ public class DriveSubsystem extends SubsystemBase {
         blEncoder.getRate(),
         brEncoder.getRate()));
 
-    double inter = 0.1;
+    double inter = 0;
 
-    currentVelocity = new Transform2d(
-        MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(), inter),
-        MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(), inter),
-        Rotation2d.fromRadians(
-            MathUtil.interpolate(speeds.omegaRadiansPerSecond, currentVelocity.getRotation().getRadians(), inter)));
+    currentVelocity = speeds;
+
+    // currentVelocity = new Transform2d(
+    // MathUtil.interpolate(speeds.vxMetersPerSecond, currentVelocity.getX(),
+    // inter),
+    // MathUtil.interpolate(speeds.vyMetersPerSecond, currentVelocity.getY(),
+    // inter),
+    // Rotation2d.fromRadians(
+    // MathUtil.interpolate(speeds.omegaRadiansPerSecond,
+    // currentVelocity.getRotation().getRadians(), inter)));
   }
 
-  public Transform2d getVelocity() {
+  public ChassisSpeeds getVelocity() {
     return currentVelocity;
+  }
+
+  public ChassisSpeeds getFieldVelocity() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(currentVelocity, getPose().getRotation());
   }
 
   public Pose2d getFutureRobotPose2d(double dt) {
@@ -538,7 +660,9 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public Pose2d getSmoothFutureRobotPose2d(double dt) {
-    return getPose().transformBy(getVelocity().times(dt));
+    Twist2d delta = getVelocity().toTwist2d(dt);
+    Transform2d trans = new Transform2d(delta.dx, delta.dy, Rotation2d.fromRadians(delta.dtheta));
+    return getPose().transformBy(trans);
   }
 
   /*

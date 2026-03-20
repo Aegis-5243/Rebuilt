@@ -16,7 +16,7 @@ public class ProController implements DriveController {
         tab.addDouble("driveY", () -> getDriveY());
         tab.addDouble("driveTurn", () -> getTurretDisplacement());
     }
-    
+
     @Override
     public double getDriveX() {
         return -controller.getLeftY();
@@ -31,7 +31,15 @@ public class ProController implements DriveController {
     public double getDriveTurn() {
         return controller.getRightX();
     }
+    
+    public double getRightX() {
+        return controller.getRightX();
+    }
 
+    public double getRightY() {
+        return controller.getRightY();
+    }
+    
     @Override
     public double getDriveBoost() {
         return MathUtil.clamp(2 * controller.getLeftTriggerAxis() - 1.0, 0.0, 1.0);
@@ -66,7 +74,7 @@ public class ProController implements DriveController {
     @Override
     public boolean getShoot() {
         // return controller.getAButton();
-        return controller.getRightTriggerAxis() > 0.6;// || controller.getBButton();
+        return controller.getAButton();
     }
 
     @Override
@@ -85,8 +93,7 @@ public class ProController implements DriveController {
     public double getHoodDisplacement() {
         double res = controller.getPOV();
 
-        
-        if (res == 0) 
+        if (res == 0)
             return 1;
         else if (res == 180)
             return -1;
@@ -96,7 +103,7 @@ public class ProController implements DriveController {
     public double getTurretDisplacement() {
         double res = controller.getPOV();
 
-        if (res == 90) 
+        if (res == 90)
             return -1;
         else if (res == 270)
             return 1;
@@ -105,6 +112,22 @@ public class ProController implements DriveController {
 
     @Override
     public boolean allShoot() {
-        return controller.getAButton();
+        return controller.getRightTriggerAxis() > 0.6;// || controller.getBButton();
+
+    }
+
+    @Override
+    public boolean climbUp() {
+        return controller.getYButton();
+    }
+
+    @Override
+    public boolean climbDown() {
+        return controller.getBButton();
+    }
+
+    @Override
+    public boolean getReverseRollers() {
+        return controller.getXButton();
     }
 }
