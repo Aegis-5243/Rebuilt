@@ -130,4 +130,9 @@ public class ProController implements DriveController {
     public boolean getReverseRollers() {
         return controller.getXButton();
     }
+
+    @Override
+    public boolean pass() {
+        return controller.getStartButton();
+    }
 }

@@ -121,4 +121,10 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'getRightY'");
     }
 
+    @Override
+    public boolean pass() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'pass'");
+    }
+
 }

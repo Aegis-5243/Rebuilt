@@ -79,4 +79,6 @@ public interface DriveController {
     public boolean climbUp();
 
     public boolean climbDown();
+
+    public boolean pass();
 }

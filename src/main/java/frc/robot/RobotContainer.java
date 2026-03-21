@@ -324,6 +324,15 @@ public class RobotContainer {
 
         new Trigger(Constants.controller::allShoot).whileTrue(shootWithDistanceMapCommand());
 
+        new Trigger(Constants.controller::pass).whileTrue(new ParallelCommandGroup(
+                hoodSubsystem.run(() -> hoodSubsystem.setPos(.9)),
+                shooterSubsystem.run(() -> shooterSubsystem.setVelocity(Units.RPM.of(4500))),
+                // rollerSubsystem.run(() -> rollerSubsystem.set(.5, Units.RPM.of(3000))),
+                faceSouthCommand()
+        ));
+
+        // new Trigger(() -> DriverStation.isDSAttached() || Constants.controller.allShoot()).onTrue(shooterSubsystem.runEnd(() -> shooterSubsystem.orchestra.play(), () -> shooterSubsystem.orchestra.stop()).withTimeout(2).ignoringDisable(true).alongWith(new InstantCommand(() -> System.out.println("bbep beep "))).ignoringDisable(true));
+
         // new Trigger(() ->
         // DriverStation.isEnabled()).whileTrue(shooterSubsystem.runEnd(shooterSubsystem.orchestra::play,
         // shooterSubsystem.orchestra::stop));
@@ -440,6 +449,20 @@ public class RobotContainer {
 
     public Command shootWithDistanceMapCommand() {
         return new RunCommand(this::shootWithDistanceMap, shooterSubsystem, hoodSubsystem, turretSubsystem);
+    }
+
+    public Command faceSouthCommand() {
+        return turretSubsystem.run(() -> {
+                double theta = driveSubsystem.getPose().getRotation().getDegrees();
+
+                theta = -theta;
+
+                
+                theta = MathUtil.clamp(MathUtil.inputModulus(theta, -180, 180), Constants.TURRET_MIN_ANGLE.in(Degrees),
+                    Constants.TURRET_MAX_ANGLE.in(Degrees));
+                
+                turretSubsystem.setTarget(theta);
+        });
     }
 
     public Command getAutonomousCommand() {
