@@ -140,6 +140,9 @@ public final class Constants {
 
         SHOT_MAP.put(4.0, new ShotData(4000, 0.43));
         TOF_MAP.put(4.0, 1.4);
+
+        SHOT_MAP.put(5.0, new ShotData(4000, 0.55));
+        TOF_MAP.put(5.0, 1.4);
     }
 
     /* TODO */

@@ -5,6 +5,7 @@
 package frc.robot.shooter;
 
 import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -17,6 +18,7 @@ import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -33,7 +35,12 @@ public class RollerSubsystem extends SubsystemBase {
         kicker.configure(new SparkMaxConfig().apply(new ClosedLoopConfig().pid(0.000065, 0, 0.07).apply(new FeedForwardConfig().kS(7))), ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         kickerSpeed = Shuffleboard.getTab("roller").add("kicker-speed-setter", 3000).getEntry();
-        Shuffleboard.getTab("roller").addDouble("kicker-rpm", () -> kicker.getEncoder().getVelocity());
+        ShuffleboardTab tab = Shuffleboard.getTab("roller");
+        tab.addDouble("kicker-rpm", () -> kicker.getEncoder().getVelocity());
+        
+        RelativeEncoder rollerEncoder = roller.getEncoder();
+        tab.addDouble("rollerCurrent", roller::getOutputCurrent);
+        tab.addDouble("rollerVelocity", rollerEncoder::getVelocity);
     }
 
     public void set(double speed) {

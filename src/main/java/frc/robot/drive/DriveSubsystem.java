@@ -693,6 +693,10 @@ public class DriveSubsystem extends SubsystemBase {
     return botToTurret(getPose());
   }
 
+  public Pose2d getFutureTurretPose() {
+    return botToTurret(getFutureRobotPose2d());
+  }
+
   /* Gets the pose of the camera with the bots position and turret angle */
   public Pose2d getEstimatedCameraPose() {
     return botToCamera(getPose());

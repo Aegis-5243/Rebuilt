@@ -47,7 +47,7 @@ public class ProController implements DriveController {
 
     @Override
     public boolean getDriveFieldCentricMode() {
-        return controller.getLeftStickButton();
+        return controller.getStartButton();
     }
 
     @Override
@@ -133,6 +133,6 @@ public class ProController implements DriveController {
 
     @Override
     public boolean pass() {
-        return controller.getStartButton();
+        return controller.getLeftStickButton();
     }
 }

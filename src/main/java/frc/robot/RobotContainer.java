@@ -280,7 +280,7 @@ public class RobotContainer {
                         rollerSubsystem.run(
                                 () -> rollerSubsystem
                                         .set(
-                                                .5,
+                                                .7,
                                                 Units.RPM.of(3000))))
                         .andThen(
                                 new WaitCommand(0.5)
@@ -365,7 +365,7 @@ public class RobotContainer {
 
         new Trigger(() -> Constants.controller.getRoller()).whileTrue(
                 rollerSubsystem.runEnd(() -> {
-                    rollerSubsystem.set(.5,
+                    rollerSubsystem.set(.9,
                             Units.RPM.of(rollerSubsystem.kickerSpeed.getDouble(3000)));
                 }, () -> rollerSubsystem.set(0)));
 
@@ -428,7 +428,7 @@ public class RobotContainer {
         // ShotData shot = Constants.SHOT_MAP.get(distance);
 
         ShotData shot = TurretCalculator.iterativeMovingShotFromMap(
-                driveSubsystem.getTurretPose(),
+                driveSubsystem.getFutureTurretPose(),
                 driveSubsystem.getFieldVelocity(),
                 Constants.FieldConstants.HUB_BLUE,
                 5);
@@ -437,7 +437,7 @@ public class RobotContainer {
 
         driveSubsystem.field.getObject("predicted-hub").setPose(thegoodposemaybe);
 
-        Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getPose(), shot.getTarget());
+        Angle azimuthAngle = TurretCalculator.calculateAzimuthAngle(driveSubsystem.getFutureRobotPose2d(), shot.getTarget());
 
         double angle = MathUtil.clamp(azimuthAngle.in(Degrees), Constants.TURRET_MIN_ANGLE.in(Degrees),
                 Constants.TURRET_MAX_ANGLE.in(Degrees));
@@ -453,7 +453,7 @@ public class RobotContainer {
 
     public Command faceSouthCommand() {
         return turretSubsystem.run(() -> {
-                double theta = driveSubsystem.getPose().getRotation().getDegrees();
+                double theta = driveSubsystem.getFutureRobotPose2d().getRotation().getDegrees();
 
                 theta = -theta;
 
