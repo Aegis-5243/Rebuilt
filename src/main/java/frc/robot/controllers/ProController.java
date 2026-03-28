@@ -131,8 +131,15 @@ public class ProController implements DriveController {
         return controller.getXButton();
     }
 
+    
+
     @Override
     public boolean pass() {
         return controller.getLeftStickButton();
+    }
+
+    @Override
+    public boolean getReverseIntake() {
+        return controller.getPOV() == 180;
     }
 }

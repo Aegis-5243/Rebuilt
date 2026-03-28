@@ -86,7 +86,7 @@ public class RobotContainer {
             rollerSubsystem.set(0);
         }).withName("rollerDefault"));
         intakeSubsystem
-                .setDefaultCommand(intakeSubsystem.run(() -> intakeSubsystem.intake.set(0))
+                .setDefaultCommand(intakeSubsystem.setIntakeCommand(0)
                         .withName("intakeDefault"));
         // hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() ->
         // hoodSubsystem.setPos(MathUtil
@@ -187,7 +187,7 @@ public class RobotContainer {
                                                                 .getPose())
                                                         .getTranslation()))).servo_pos)),
                         faceHubCommand(),
-                        intakeSubsystem.run(() -> intakeSubsystem.intake.set(.9)))));
+                        intakeSubsystem.setIntakeCommand(0.9))));
 
         autoChooser.setDefaultOption("dumb auto", new SequentialCommandGroup(
                 new ParallelDeadlineGroup(
@@ -222,7 +222,7 @@ public class RobotContainer {
                         // .getPose())
                         // .getTranslation()))).servo_pos)),
                         // faceHubCommand(),
-                        intakeSubsystem.run(() -> intakeSubsystem.intake.set(.4)))));
+                        intakeSubsystem.setIntakeCommand(0.4))));
 
         autoChooser.addOption("climb", new SequentialCommandGroup(
                 new ParallelCommandGroup(
@@ -250,7 +250,7 @@ public class RobotContainer {
                 // new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 - 1),
                 // driveSubsystem.getPose().getMeasureY(), Rotation2d.k180deg)).withDeadline(new
                 // WaitCommand(2)),
-                new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 + 2.5),
+                new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 + 5),
                         Units.Inches.of(123.97 - 15.75 + 5), Rotation2d.k180deg), 1).raceWith(new WaitCommand(4)),
                 Commands.run(() -> driveSubsystem.driveFieldCentric(0, 1, 0), driveSubsystem)
                         .withDeadline(new WaitCommand(1)),
@@ -363,17 +363,17 @@ public class RobotContainer {
 
         }, () -> shooterSubsystem.setDutyCycle(0)));
 
-        new Trigger(() -> Constants.controller.getRoller()).whileTrue(
+        new Trigger(Constants.controller::getRoller).whileTrue(
                 rollerSubsystem.runEnd(() -> {
                     rollerSubsystem.set(.9,
                             Units.RPM.of(rollerSubsystem.kickerSpeed.getDouble(3000)));
                 }, () -> rollerSubsystem.set(0)));
 
-        new Trigger(() -> Constants.controller.getIntake()).whileTrue(
-                intakeSubsystem.runEnd(() -> intakeSubsystem.intake.set(.9),
-                        () -> intakeSubsystem.intake.set(0)));
+        new Trigger(Constants.controller::getIntake).whileTrue(intakeSubsystem.setIntakeCommand(0.9));
 
-        new Trigger(() -> Constants.controller.getDriveFieldCentricFacingHubMode()).whileTrue(faceHubCommand());
+        new Trigger(Constants.controller::getReverseIntake).whileTrue(intakeSubsystem.setIntakeCommand(-0.9));
+
+        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
 
         new Trigger(Constants.controller::climbUp).whileTrue(climbSubsystem.setPowerCommand(0.5));
 

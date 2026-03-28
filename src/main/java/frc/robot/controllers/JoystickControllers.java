@@ -127,4 +127,10 @@ public class JoystickControllers implements DriveController {
         throw new UnsupportedOperationException("Unimplemented method 'pass'");
     }
 
+    @Override
+    public boolean getReverseIntake() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'reverseIntake'");
+    }
+
 }

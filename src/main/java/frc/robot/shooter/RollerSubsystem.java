@@ -20,12 +20,15 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 
 public class RollerSubsystem extends SubsystemBase {
     public SparkMax roller;
     public SparkMax kicker;
     public GenericEntry kickerSpeed;
+
+    Trigger rollerStallTrigger;
 
     /** Creates a new ExampleSubsystem. */
     public RollerSubsystem() {
@@ -41,6 +44,14 @@ public class RollerSubsystem extends SubsystemBase {
         RelativeEncoder rollerEncoder = roller.getEncoder();
         tab.addDouble("rollerCurrent", roller::getOutputCurrent);
         tab.addDouble("rollerVelocity", rollerEncoder::getVelocity);
+
+        rollerStallTrigger = new Trigger(() -> {
+            double current = roller.getOutputCurrent();
+            double velocity = rollerEncoder.getVelocity();
+            return (current > 60 && Math.abs(velocity) < 1000);
+        });
+
+        tab.addBoolean("rollerStalled", rollerStallTrigger::getAsBoolean);
     }
 
     public void set(double speed) {

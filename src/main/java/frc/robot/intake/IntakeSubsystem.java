@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class IntakeSubsystem extends SubsystemBase {
-    public SparkMax intake;
+    private SparkMax intake;
 
     /** Creates a new ExampleSubsystem. */
     public IntakeSubsystem() {
@@ -30,7 +30,11 @@ public class IntakeSubsystem extends SubsystemBase {
         // This method will be called once per scheduler run during simulation
     }
 
+    private void setIntake(double speed) {
+        intake.set(speed);
+    }
+
     public Command setIntakeCommand(double speed) {
-        return runEnd(() -> intake.set(speed), () -> intake.set(0));
+        return runEnd(() -> setIntake(speed), () -> setIntake(0));
     }
 }

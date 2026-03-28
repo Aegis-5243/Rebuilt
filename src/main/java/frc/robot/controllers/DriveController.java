@@ -81,4 +81,6 @@ public interface DriveController {
     public boolean climbDown();
 
     public boolean pass();
+
+    public boolean getReverseIntake();
 }
