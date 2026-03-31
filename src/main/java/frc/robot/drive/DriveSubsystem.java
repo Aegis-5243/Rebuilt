@@ -573,6 +573,10 @@ public class DriveSubsystem extends SubsystemBase {
 
   }
 
+  public Command resetPoseCommand(Pose2d pose) {
+    return runOnce(() -> resetPos(pose));
+  }
+
   public void resetPos() {
     Pose2d pose = new Pose2d(Kinematics.HUB_POSITION_2D.plus(new Translation2d(-1, 0)), Rotation2d.kZero);
     resetPos(pose);

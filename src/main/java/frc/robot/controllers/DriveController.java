@@ -62,7 +62,7 @@ public interface DriveController {
      */
     public boolean getAlignToOriginPoseButton();
 
-    public boolean getShoot();
+    public boolean getRawShoot();
 
     public boolean getIntake();
 

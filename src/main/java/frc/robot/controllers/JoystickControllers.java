@@ -58,7 +58,7 @@ public class JoystickControllers implements DriveController {
     }
 
     @Override
-    public boolean getShoot() {
+    public boolean getRawShoot() {
         return primaryController.getTrigger();
     }
 

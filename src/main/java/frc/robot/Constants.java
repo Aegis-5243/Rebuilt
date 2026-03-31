@@ -161,6 +161,11 @@ public final class Constants {
     public static final int GYRO = 15;
     public static final double DRIVE_kP = 0.002;
 
+
+
+    public static final double ROLLER_SPEED = 0.9;
+    public static final double ROLLER_SPEED_REVERSE = -0.7;
+
     public static DriveController controller = new ProController(0);
 
     public static class OperatorConstants {

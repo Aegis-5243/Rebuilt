@@ -72,7 +72,7 @@ public class ProController implements DriveController {
     }
 
     @Override
-    public boolean getShoot() {
+    public boolean getRawShoot() {
         // return controller.getAButton();
         return controller.getAButton();
     }
