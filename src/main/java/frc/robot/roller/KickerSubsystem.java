@@ -64,6 +64,6 @@ public class KickerSubsystem extends SubsystemBase {
      }
 
      public Command runKickerCommand() {
-        return setSpeedCommand(kickerSpeedEntry.getDouble(3000));
+        return setVelocityCommand(Units.RPM.of(kickerSpeedEntry.getDouble(3000)));
      }
 }

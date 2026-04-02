@@ -80,11 +80,15 @@ public class RobotContainer {
     // () -> driveSubsystem.gyro.getAngle(), () ->
     // Units.DegreesPerSecond.of(driveSubsystem.gyro.getRate()));
 
+    
+    /** whether the turret wasn't clamped */
+    private boolean shotIsAligned = false;
+    
+    
+    
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
-
-    private boolean shotIsAligned = false;
 
     public RobotContainer() {
         driveSubsystem.setDefaultCommand(driveSubsystem.controllerDriveRobotCentricCommand);
@@ -134,6 +138,7 @@ public class RobotContainer {
         Shuffleboard.getTab("Climb").add(new AlignToPose(driveSubsystem,
                 new Pose2d(Units.Inches.of(41.755 - 1), Units.Inches.of(123.97 - 15.75 / 2),
                         Rotation2d.k180deg)));
+
     }
 
     /**
@@ -162,12 +167,13 @@ public class RobotContainer {
         // new
         // Trigger(Constants.controller::allShoot).whileTrue(shootWithDistanceMapCommand());
         new Trigger(Constants.controller::allShoot).whileTrue(shootToHubWithRollerDelay(0.5));
+        
+        new Trigger(Constants.controller::pass).whileTrue(shootSouthWithRollerDelay(0.5));
 
-        new Trigger(Constants.controller::pass).whileTrue(new ParallelCommandGroup(
-                hoodSubsystem.run(() -> hoodSubsystem.setPos(.9)),
-                shooterSubsystem.setVelocityCommand(Units.RPM.of(4500)),
-                // rollerSubsystem.run(() -> rollerSubsystem.set(.5, Units.RPM.of(3000))),
-                faceSouthCommand()));
+        //         hoodSubsystem.run(() -> hoodSubsystem.setPos(.9)),
+        //         shooterSubsystem.setVelocityCommand(Units.RPM.of(4500)),
+        //         // rollerSubsystem.run(() -> rollerSubsystem.set(.5, Units.RPM.of(3000))),
+        //         faceSouthCommand()));
 
         // new Trigger(() -> DriverStation.isDSAttached() ||
         // Constants.controller.allShoot()).onTrue(shooterSubsystem.runEnd(() ->
@@ -212,8 +218,9 @@ public class RobotContainer {
 
         new Trigger(Constants.controller::getReverseIntake).whileTrue(intakeSubsystem.setIntakeCommand(-0.9));
 
-        // new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
-        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(driveSubsystem.controllerDriveRobotCentricFacingHubCommand());
+        // Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
+        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode)
+                .whileTrue(driveSubsystem.controllerDriveRobotCentricFacingHubCommand());
 
         new Trigger(Constants.controller::climbUp).whileTrue(climbSubsystem.setPowerCommand(0.5));
 
@@ -375,9 +382,16 @@ public class RobotContainer {
 
     /** Proxied command to run rollers only while aligned */
     public Command runRollersWhileAligned() {
-        return new RepeatCommand(Commands.idle().until(() -> shotIsAligned))
-                .andThen(runRollers().alongWith(runIntake().until(() -> !shotIsAligned)))
-                /* asProxy() prevents any composition that uses this command from cancelling when the rollers are run manually */
+        return new RepeatCommand(
+                Commands.idle()
+                        .until(() -> shotIsAligned)
+                        .andThen(runRollers().alongWith(runIntake().asProxy())
+                                .until(() -> !shotIsAligned)))
+                .withName("runRollersWhileAlignedCommand")
+                /*
+                 * asProxy() prevents any composition that uses this command from cancelling
+                 * when the rollers are run manually
+                 */
                 .asProxy();
     }
 
@@ -386,7 +400,7 @@ public class RobotContainer {
         return new ParallelCommandGroup(
                 shootWithDistanceMapCommand(),
                 new WaitCommand(seconds)
-                        .andThen(runRollers().alongWith(runIntake().asProxy()/* proxy allows intake to be manually run while this command is running */)));
+                        .andThen(runRollersWhileAligned()));
     }
 
     public void shootSouth() {
@@ -415,7 +429,7 @@ public class RobotContainer {
         return new ParallelCommandGroup(
                 shootSouthCommand(),
                 new WaitCommand(seconds)
-                        .andThen(runRollersWhileAligned().alongWith(runIntake().asProxy()/* proxy allows intake to be manually run while this command is running */)));
+                        .andThen(runRollersWhileAligned()));
     }
 
     public Command faceSouthCommand() {

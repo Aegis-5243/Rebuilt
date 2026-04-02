@@ -123,26 +123,26 @@ public final class Constants {
     public static final InterpolatingDoubleTreeMap TOF_MAP = new InterpolatingDoubleTreeMap();
 
     static {
-        SHOT_MAP.put(1.4, new ShotData(2250, 0));
-        TOF_MAP.put(1.4, 1.0);
+        SHOT_MAP.put(1.0, new ShotData(2250, 0));
+        TOF_MAP.put(1.0, 1.0);
 
-        SHOT_MAP.put(1.7, new ShotData(2500, 0));
-        TOF_MAP.put(1.7, 1.05);
+        SHOT_MAP.put(1.3, new ShotData(2500, 0));
+        TOF_MAP.put(1.3, 1.05);
         
-        SHOT_MAP.put(2.4, new ShotData(3000, 0.12));
-        TOF_MAP.put(2.4, 1.2);
+        SHOT_MAP.put(2.0, new ShotData(3000, 0.12));
+        TOF_MAP.put(2.0, 1.2);
 
-        SHOT_MAP.put(3.0, new ShotData(3000, 0.24));
-        TOF_MAP.put(3.0, 1.25);
+        SHOT_MAP.put(2.5, new ShotData(3000, 0.24));
+        TOF_MAP.put(2.5, 1.25);
 
-        SHOT_MAP.put(3.3, new ShotData(3600, 0.3));
-        TOF_MAP.put(3.3, 1.3);
+        SHOT_MAP.put(2.8, new ShotData(3600, 0.3));
+        TOF_MAP.put(2.8, 1.3);
 
-        SHOT_MAP.put(3.7, new ShotData(4000, 0.43));
+        SHOT_MAP.put(3.2, new ShotData(4000, 0.43));
+        TOF_MAP.put(3.2, 1.4);
+
+        SHOT_MAP.put(3.7, new ShotData(4000, 0.55));
         TOF_MAP.put(3.7, 1.4);
-
-        SHOT_MAP.put(4.3, new ShotData(4000, 0.55));
-        TOF_MAP.put(4.3, 1.4);
     }
 
     /* TODO */
