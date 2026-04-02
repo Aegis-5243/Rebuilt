@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.Degrees;
 
 import java.util.function.BooleanSupplier;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.cameraserver.CameraServer;
@@ -74,7 +76,7 @@ public class RobotContainer {
     private final CameraSubsystem cameraSubsystem = new CameraSubsystem(driveSubsystem);
     private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
 
-    private final SendableChooser<Command> autoChooser = new SendableChooser<Command>();
+    private SendableChooser<Command> autoChooser;
     // private final CameraSubsystem cameraSubsystem = new
     // CameraSubsystem(driveSubsystem::getPose,
     // () -> driveSubsystem.gyro.getAngle(), () ->
@@ -264,6 +266,8 @@ public class RobotContainer {
         // driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, -0.4,
         // 0)).withDeadline(
         // new WaitCommand(1).andThen(climbSubsystem.runToSetpointCommand(2.0)))));
+
+        autoChooser = AutoBuilder.buildAutoChooser();
 
         Command autoCommand1 = new SequentialCommandGroup(
                 // Reset pose

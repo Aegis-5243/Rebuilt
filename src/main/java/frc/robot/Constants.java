@@ -52,6 +52,7 @@ public final class Constants {
     public static final double DRIVE_kS = 0.725;
     public static final double DRIVE_kV = 2.58;
     public static final double DRIVE_kA = 0.59;
+    public static final double DRIVE_kP = 0.002;
 
     public static final int ENCODER_CYCLES_PER_REV = 2048;
 
@@ -159,7 +160,6 @@ public final class Constants {
     /** RPM to inches per second */
     public static final double CLIMB_VELOCITY_CONVERSION_FACTOR = CLIMB_POSISION_CONVERSION_FACTOR / 60.0;
     public static final int GYRO = 15;
-    public static final double DRIVE_kP = 0.002;
 
 
 
