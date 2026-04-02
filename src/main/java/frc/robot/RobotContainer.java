@@ -159,12 +159,6 @@ public class RobotContainer {
         new Trigger(() -> Constants.controller.getDriveFieldCentricMode())
                 .toggleOnTrue(driveSubsystem.controllerDriveFieldCentricFlickStickCommand());
 
-        // // Drive field centric facing origin
-        // new Trigger(() ->
-        // Constants.controller.getDriveFieldCentricFacingOriginMode())
-        // .whileTrue(driveSubsystem.controllerDriveFieldCentricFacingPoseCommand(() ->
-        // 0, () -> 0));
-
         // new
         // Trigger(Constants.controller::allShoot).whileTrue(shootWithDistanceMapCommand());
         new Trigger(Constants.controller::allShoot).whileTrue(shootToHubWithRollerDelay(0.5));
@@ -218,7 +212,8 @@ public class RobotContainer {
 
         new Trigger(Constants.controller::getReverseIntake).whileTrue(intakeSubsystem.setIntakeCommand(-0.9));
 
-        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
+        // new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
+        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(driveSubsystem.controllerDriveRobotCentricFacingHubCommand());
 
         new Trigger(Constants.controller::climbUp).whileTrue(climbSubsystem.setPowerCommand(0.5));
 
@@ -378,10 +373,12 @@ public class RobotContainer {
                 .finallyDo(() -> shotIsAligned = false);
     }
 
-    public Command runRollersWhenNotClamped() {
-        // TODO: make kicker stop after rollers and start before rollers somehow
+    /** Proxied command to run rollers only while aligned */
+    public Command runRollersWhileAligned() {
         return new RepeatCommand(Commands.idle().until(() -> shotIsAligned))
-                .andThen(runRollers().alongWith(runIntake().until(() -> !shotIsAligned)));
+                .andThen(runRollers().alongWith(runIntake().until(() -> !shotIsAligned)))
+                /* asProxy() prevents any composition that uses this command from cancelling when the rollers are run manually */
+                .asProxy();
     }
 
     /** Also checks whether the turret wasn't clamped */
@@ -389,7 +386,7 @@ public class RobotContainer {
         return new ParallelCommandGroup(
                 shootWithDistanceMapCommand(),
                 new WaitCommand(seconds)
-                        .andThen(runRollers().alongWith(runIntake())));
+                        .andThen(runRollers().alongWith(runIntake().asProxy()/* proxy allows intake to be manually run while this command is running */)));
     }
 
     public void shootSouth() {
@@ -418,7 +415,7 @@ public class RobotContainer {
         return new ParallelCommandGroup(
                 shootSouthCommand(),
                 new WaitCommand(seconds)
-                        .andThen(runRollersWhenNotClamped().alongWith(runIntake())));
+                        .andThen(runRollersWhileAligned().alongWith(runIntake().asProxy()/* proxy allows intake to be manually run while this command is running */)));
     }
 
     public Command faceSouthCommand() {

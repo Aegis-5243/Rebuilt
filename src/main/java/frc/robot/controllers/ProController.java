@@ -52,7 +52,7 @@ public class ProController implements DriveController {
 
     @Override
     public boolean getDriveFieldCentricFacingHubMode() {
-        return controller.getRightStickButton();
+        return controller.getLeftStickButton();
     }
 
     @Override
@@ -135,7 +135,7 @@ public class ProController implements DriveController {
 
     @Override
     public boolean pass() {
-        return controller.getLeftStickButton();
+        return controller.getRightStickButton();
     }
 
     @Override
