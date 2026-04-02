@@ -76,7 +76,7 @@ public class RobotContainer {
     private final CameraSubsystem cameraSubsystem = new CameraSubsystem(driveSubsystem);
     private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
 
-    private SendableChooser<Command> autoChooser;
+    private final SendableChooser<Command> autoChooser;
     // private final CameraSubsystem cameraSubsystem = new
     // CameraSubsystem(driveSubsystem::getPose,
     // () -> driveSubsystem.gyro.getAngle(), () ->
@@ -129,6 +129,8 @@ public class RobotContainer {
         // CameraServer.startAutomaticCapture(0);
 
         configureBindings();
+
+        autoChooser = AutoBuilder.buildAutoChooser();
 
         setupAutos();
 
@@ -266,8 +268,6 @@ public class RobotContainer {
         // driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, -0.4,
         // 0)).withDeadline(
         // new WaitCommand(1).andThen(climbSubsystem.runToSetpointCommand(2.0)))));
-
-        autoChooser = AutoBuilder.buildAutoChooser();
 
         Command autoCommand1 = new SequentialCommandGroup(
                 // Reset pose
