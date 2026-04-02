@@ -93,6 +93,10 @@ public class TurretSubsystem extends SubsystemBase {
         turret.getClosedLoopController().setSetpoint(pos, ControlType.kPosition);
     }
 
+    public boolean atSetpoint() {
+        return turret.getClosedLoopController().isAtSetpoint();
+    }
+
     public void setPower(double power) {
         if (power < 0 && turretEncoder.getPosition() > -90)
             turret.set(power);

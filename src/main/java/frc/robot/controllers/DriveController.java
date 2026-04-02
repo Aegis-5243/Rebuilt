@@ -32,6 +32,8 @@ public interface DriveController {
      */
     public double getDriveBoost();
 
+    public void setAutoBoostShift(double offset);
+
     /**
      * Gets whether the controller is in field-centric mode.
      * @return whether the controller is in field-centric mode

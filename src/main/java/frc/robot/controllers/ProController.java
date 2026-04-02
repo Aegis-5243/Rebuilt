@@ -1,12 +1,14 @@
 package frc.robot.controllers;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 public class ProController implements DriveController {
     private XboxController controller;
+    private double autoShift;
 
     public ProController(int port) {
         controller = new XboxController(port);
@@ -42,7 +44,13 @@ public class ProController implements DriveController {
     
     @Override
     public double getDriveBoost() {
-        return MathUtil.clamp(2 * controller.getLeftTriggerAxis() - 1.0, 0.0, 1.0);
+
+        double res = 2 * controller.getLeftTriggerAxis();
+        if (DriverStation.isAutonomous()) 
+            res += autoShift;
+        res = MathUtil.clamp(2 * controller.getLeftTriggerAxis() - 1.0, 0.0, 1.0);
+        
+        return res;
     }
 
     @Override
@@ -141,5 +149,10 @@ public class ProController implements DriveController {
     @Override
     public boolean getReverseIntake() {
         return controller.getPOV() == 180;
+    }
+
+    @Override
+    public void setAutoBoostShift(double offset) {
+        autoShift = offset;
     }
 }

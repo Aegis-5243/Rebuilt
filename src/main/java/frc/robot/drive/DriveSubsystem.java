@@ -14,6 +14,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.controllers.PPLTVController;
 import com.playingwithfusion.CANVenom;
 import com.playingwithfusion.CANVenom.BrakeCoastMode;
 import com.playingwithfusion.CANVenom.ControlMode;
@@ -31,6 +32,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
@@ -78,6 +80,8 @@ public class DriveSubsystem extends SubsystemBase {
     public CustomMecanumDrive drive;
     public MecanumDriveKinematics kinematics;
     public MecanumDrivePoseEstimator poseEstimator;
+
+    public DifferentialDriveKinematics diffKinematics;
 
     public AHRS gyro;
 
@@ -200,6 +204,8 @@ public class DriveSubsystem extends SubsystemBase {
                 131.0 / 133.0,
                 138.0 / 161.0);
 
+        diffKinematics = new DifferentialDriveKinematics(0.25691592 * 2);
+
         poseEstimator = new MecanumDrivePoseEstimator(kinematics, new Rotation2d(-gyro.getYaw()),
                 new MecanumDriveWheelPositions(), Pose2d.kZero);
 
@@ -311,7 +317,7 @@ public class DriveSubsystem extends SubsystemBase {
               (speeds, feedforwards) -> driveRobotRelative(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
               new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
                       new PIDConstants(8.5, 0.01, 0.2), // Translation PID constants
-                      new PIDConstants(0.04, 0.0001, 0.001) // Rotation PID constants
+                      new PIDConstants(5, 0, 0) // Rotation PID constants
               ),
               config, // The robot configuration
               () -> {
@@ -522,13 +528,13 @@ public class DriveSubsystem extends SubsystemBase {
   public void driveRobotRelative(ChassisSpeeds speeds) {
     MecanumDriveWheelSpeeds wheelSpeeds = kinematics.toWheelSpeeds(speeds);
     
-    flMotor.setVoltage(flFeedforward.calculate(wheelSpeeds.frontLeftMetersPerSecond) + flPID.calculate(flEncoder.getRate(), wheelSpeeds.frontLeftMetersPerSecond));
-    blMotor.setVoltage(blFeedforward.calculate(wheelSpeeds.rearLeftMetersPerSecond) + blPID.calculate(blEncoder.getRate(), wheelSpeeds.rearLeftMetersPerSecond));
-    frMotor.setVoltage(frFeedforward.calculate(wheelSpeeds.frontRightMetersPerSecond) + frPID.calculate(frEncoder.getRate(), wheelSpeeds.frontRightMetersPerSecond));
-    brMotor.setVoltage(brFeedforward.calculate(wheelSpeeds.rearRightMetersPerSecond) + brPID.calculate(brEncoder.getRate(), wheelSpeeds.rearRightMetersPerSecond));
+    // flMotor.setVoltage(flFeedforward.calculate(-wheelSpeeds.frontLeftMetersPerSecond) + flPID.calculate(flEncoder.getRate(), -wheelSpeeds.frontLeftMetersPerSecond));
+    // blMotor.setVoltage(blFeedforward.calculate(-wheelSpeeds.rearLeftMetersPerSecond) + blPID.calculate(blEncoder.getRate(), -wheelSpeeds.rearLeftMetersPerSecond));
+    // frMotor.setVoltage(frFeedforward.calculate(-wheelSpeeds.frontRightMetersPerSecond) + frPID.calculate(frEncoder.getRate(), -wheelSpeeds.frontRightMetersPerSecond));
+    // brMotor.setVoltage(brFeedforward.calculate(-wheelSpeeds.rearRightMetersPerSecond) + brPID.calculate(brEncoder.getRate(), -wheelSpeeds.rearRightMetersPerSecond));
 
     //alternative implementation (unsure if this would work but is nicer)
-    // driveRobotCentric(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+    driveRobotCentric(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
 
   }
 

@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import java.util.function.BooleanSupplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -121,6 +122,11 @@ public class RobotContainer {
         climbSubsystem.setDefaultCommand(climbSubsystem.climbDefaultCommand());
 
         CommandScheduler.getInstance().registerSubsystem(cameraSubsystem);
+
+        NamedCommands.registerCommand("Intake", intakeSubsystem.setIntakeCommand(0.9));
+        NamedCommands.registerCommand("TurretToNeg90", turretSubsystem.run(() -> turretSubsystem.setTarget(-90)).until(turretSubsystem::atSetpoint).withTimeout(0.2));
+        NamedCommands.registerCommand("TurretToNeg45", turretSubsystem.run(() -> turretSubsystem.setTarget(-45)).until(turretSubsystem::atSetpoint).withTimeout(0.2));
+        NamedCommands.registerCommand("Shoot", shootToHubWithRollerDelay(0.5));
 
         driveSubsystem.setLimelightPoseSupplier(cameraSubsystem::getPose);
         driveSubsystem.setLimelightTimestampSupplier(() -> cameraSubsystem.timestamp);
@@ -293,7 +299,17 @@ public class RobotContainer {
 
         );
 
+        Command autoCommand2 = new SequentialCommandGroup(
+            AutoBuilder.buildAuto("PP Auto 1"),
+            driveSubsystem.runEnd(() -> {
+                Constants.controller.setAutoBoostShift(1);
+                driveSubsystem.driveRobotCentric(-1, 0, 0);
+                
+            }, () -> driveSubsystem.driveFieldCentric(0, 0, 0)).withTimeout(3)
+        );
+
         autoChooser.addOption("auto1", autoCommand1);
+        autoChooser.addOption("auto 2", autoCommand2);
     }
 
     public Command runRollers() {
