@@ -12,14 +12,19 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.playingwithfusion.TimeOfFlight;
+import com.playingwithfusion.TimeOfFlight.RangingMode;
 
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.wpilibj.ADXL345_I2C.Range;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 
@@ -37,6 +42,9 @@ public class ShooterSubsystem extends SubsystemBase {
     public GenericEntry RPMMod;
 
     public Orchestra orchestra;
+
+    public TimeOfFlight outtakeTof;
+    public int outtakedBalls;
 
     /** Creates a new ExampleSubsystem. */
     public ShooterSubsystem() {
@@ -88,6 +96,12 @@ public class ShooterSubsystem extends SubsystemBase {
                                     Units.RotationsPerSecond.of(primaryShooter.getVelocity().getValueAsDouble()));
                 },
                 this));
+
+        outtakeTof = new TimeOfFlight(33);
+        outtakeTof.setRangingMode(RangingMode.Short, 24);
+        outtakedBalls = 0;
+
+        new Trigger(() -> {return outtakeTof.getRange() < 45;}).onTrue(new InstantCommand(() -> outtakedBalls++));
     }
 
     public void setVelocity(AngularVelocity speed) {

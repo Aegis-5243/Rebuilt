@@ -16,45 +16,32 @@
     },
     {
       "anchor": {
-        "x": 2.5855034722222223,
-        "y": 2.318628472222223
+        "x": 4.463839285714285,
+        "y": 0.6175535714285718
       },
       "prevControl": {
-        "x": 3.5145486111111133,
-        "y": 2.3501215277777785
+        "x": 7.492571428571429,
+        "y": 0.4393928571428569
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Trench"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.3236714975845413,
-      "rotationDegrees": 36.56
-    },
-    {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": 0.0
-    },
-    {
-      "waypointRelativePos": 0.7826086956521737,
-      "rotationDegrees": 0.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
-    "maxAcceleration": 3.0,
+    "maxVelocity": 1.5,
+    "maxAcceleration": 2.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0.0,
+    "velocity": 1.0,
     "rotation": 0.0
   },
   "reversed": true,
@@ -63,5 +50,5 @@
     "velocity": 0,
     "rotation": 90.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

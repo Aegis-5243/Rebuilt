@@ -83,12 +83,9 @@ public class RobotContainer {
     // () -> driveSubsystem.gyro.getAngle(), () ->
     // Units.DegreesPerSecond.of(driveSubsystem.gyro.getRate()));
 
-    
     /** whether the turret wasn't clamped */
     private boolean shotIsAligned = false;
-    
-    
-    
+
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
@@ -123,9 +120,14 @@ public class RobotContainer {
 
         CommandScheduler.getInstance().registerSubsystem(cameraSubsystem);
 
-        NamedCommands.registerCommand("Intake", intakeSubsystem.setIntakeCommand(0.9));
-        NamedCommands.registerCommand("TurretToNeg90", turretSubsystem.run(() -> turretSubsystem.setTarget(-90)).until(turretSubsystem::atSetpoint).withTimeout(0.2));
-        NamedCommands.registerCommand("TurretToNeg45", turretSubsystem.run(() -> turretSubsystem.setTarget(-45)).until(turretSubsystem::atSetpoint).withTimeout(0.2));
+        NamedCommands.registerCommand("Intake", intakeSubsystem.setIntakeCommand(0.9).asProxy());
+        NamedCommands.registerCommand("TurretToNeg90", turretSubsystem.run(() -> turretSubsystem.setTarget(-90))
+                .until(turretSubsystem::atSetpoint).withTimeout(0.2));
+        NamedCommands.registerCommand("TurretToNeg45", turretSubsystem.run(() -> turretSubsystem.setTarget(-45))
+                .until(turretSubsystem::atSetpoint).withTimeout(0.2));
+        NamedCommands.registerCommand("TurretToPos45", turretSubsystem.run(() -> turretSubsystem.setTarget(45))
+                .until(turretSubsystem::atSetpoint).withTimeout(0.2));
+        NamedCommands.registerCommand("ClimbUp", climbSubsystem.runToSetpointCommand(7.2));
         NamedCommands.registerCommand("Shoot", shootToHubWithRollerDelay(0.5));
 
         driveSubsystem.setLimelightPoseSupplier(cameraSubsystem::getPose);
@@ -177,13 +179,13 @@ public class RobotContainer {
         // new
         // Trigger(Constants.controller::allShoot).whileTrue(shootWithDistanceMapCommand());
         new Trigger(Constants.controller::allShoot).whileTrue(shootToHubWithRollerDelay(0.5));
-        
+
         new Trigger(Constants.controller::pass).whileTrue(shootSouthWithRollerDelay(0.5));
 
-        //         hoodSubsystem.run(() -> hoodSubsystem.setPos(.9)),
-        //         shooterSubsystem.setVelocityCommand(Units.RPM.of(4500)),
-        //         // rollerSubsystem.run(() -> rollerSubsystem.set(.5, Units.RPM.of(3000))),
-        //         faceSouthCommand()));
+        // hoodSubsystem.run(() -> hoodSubsystem.setPos(.9)),
+        // shooterSubsystem.setVelocityCommand(Units.RPM.of(4500)),
+        // // rollerSubsystem.run(() -> rollerSubsystem.set(.5, Units.RPM.of(3000))),
+        // faceSouthCommand()));
 
         // new Trigger(() -> DriverStation.isDSAttached() ||
         // Constants.controller.allShoot()).onTrue(shooterSubsystem.runEnd(() ->
@@ -290,26 +292,45 @@ public class RobotContainer {
                         Rotation2d.k180deg)),
                 // Move out and shoot
                 new ParallelCommandGroup(
-                        shootToHubWithRollerDelay(1),
+                        shootToHubWithRollerDelay(1).withTimeout(6),
                         new AlignToPose(driveSubsystem, new Pose2d(Units.Inches
                                 .of(100),
                                 Units.Inches.of(76.5),
                                 Rotation2d.k180deg)),
-                        climbSubsystem.runToSetpointCommand(7.2))
+                        climbSubsystem.runToSetpointCommand(7.2)),
+                // hopperSubsystem.runOnce(() -> hopperSubsystem.set(0)),
+                // shooterSubsystem.runOnce(() -> shooterSubsystem.setDutyCycle(0)),
+                new AlignToPose(driveSubsystem, new Pose2d(Units.Inches.of(41.755 + 5),
+                        Units.Inches.of(123.97 - 15.75 + 5), Rotation2d.k180deg), 1).withTimeout(4),
+                Commands.run(() -> driveSubsystem.driveFieldCentric(0, 1, 0), driveSubsystem)
+                        .withDeadline(new WaitCommand(1)),
+                Commands.run(() -> driveSubsystem.driveFieldCentric(-0.5, 0, 0),
+                        driveSubsystem)
+                        .withDeadline(new WaitCommand(1.5)),
+                new InstantCommand(() -> {
+                    System.out.println("align end");
+                }),
+                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, -0.4,
+                        0)).withDeadline(
+                                new WaitCommand(1).andThen(climbSubsystem.runToSetpointCommand(2.0)))
 
         );
 
         Command autoCommand2 = new SequentialCommandGroup(
-            AutoBuilder.buildAuto("PP Auto 1"),
-            driveSubsystem.runEnd(() -> {
-                Constants.controller.setAutoBoostShift(1);
-                driveSubsystem.driveRobotCentric(-1, 0, 0);
-                
-            }, () -> driveSubsystem.driveFieldCentric(0, 0, 0)).withTimeout(3)
+                AutoBuilder.buildAuto("PP Auto 1"),
+                Commands.run(() -> driveSubsystem.driveFieldCentric(0, 1, 0), driveSubsystem)
+                        .withDeadline(new WaitCommand(1)),
+                Commands.run(() -> driveSubsystem.driveFieldCentric(-0.5, 0, 0),
+                        driveSubsystem)
+                        .withDeadline(new WaitCommand(1.5)),
+                driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, -0.4,
+                        0)).withDeadline(
+                                new WaitCommand(1).andThen(climbSubsystem.runToSetpointCommand(2.0)))
+
         );
 
-        autoChooser.addOption("auto1", autoCommand1);
-        autoChooser.addOption("auto 2", autoCommand2);
+        autoChooser.addOption("climbauto1", autoCommand1);
+        autoChooser.addOption("pp auto + climb", autoCommand2);
     }
 
     public Command runRollers() {
@@ -420,7 +441,10 @@ public class RobotContainer {
         return new ParallelCommandGroup(
                 shootWithDistanceMapCommand(),
                 new WaitCommand(seconds)
-                        .andThen(runRollersWhileAligned()));
+                        .andThen(runRollersWhileAligned()))
+                .finallyDo(() -> {
+                    shooterSubsystem.setDutyCycle(0);
+                });
     }
 
     public void shootSouth() {
