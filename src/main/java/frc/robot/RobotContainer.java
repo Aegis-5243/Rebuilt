@@ -319,18 +319,34 @@ public class RobotContainer {
         Command autoCommand2 = new SequentialCommandGroup(
                 AutoBuilder.buildAuto("PP Auto 1"),
                 Commands.run(() -> driveSubsystem.driveFieldCentric(0, 1, 0), driveSubsystem)
-                        .withDeadline(new WaitCommand(1)),
+                        .withDeadline(new WaitCommand(2)),
                 Commands.run(() -> driveSubsystem.driveFieldCentric(-0.5, 0, 0),
                         driveSubsystem)
                         .withDeadline(new WaitCommand(1.5)),
                 driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(0, -0.4,
                         0)).withDeadline(
-                                new WaitCommand(1).andThen(climbSubsystem.runToSetpointCommand(2.0)))
+                                new WaitCommand(0.5).andThen(climbSubsystem.runToSetpointCommand(2.0)))
+
+        );
+
+
+
+        Command autoCommand3 = new SequentialCommandGroup(
+                // Reset pose
+                driveSubsystem.resetPoseCommand(new Pose2d(Units.Inches
+                        .of(136),
+                        Units.Inches.of(76.5),
+                        Rotation2d.k180deg)),
+                // Move out and shoot
+                new ParallelCommandGroup(
+                        shootToHubWithRollerDelay(1).withTimeout(9),
+                        driveSubsystem.run(() -> driveSubsystem.driveRobotCentric(1, 0, 0)))
 
         );
 
         autoChooser.addOption("climbauto1", autoCommand1);
         autoChooser.addOption("pp auto + climb", autoCommand2);
+        autoChooser.addOption("simple shoot", autoCommand3);
     }
 
     public Command runRollers() {
