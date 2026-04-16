@@ -52,6 +52,7 @@ import frc.robot.shooter.HoodSubsystem;
 import frc.robot.shooter.ShooterSubsystem;
 import frc.robot.shooter.TurretSubsystem;
 import frc.robot.utils.Kinematics;
+import frc.robot.utils.LimelightHelpers;
 import frc.robot.utils.TurretCalculator;
 import frc.robot.utils.TurretCalculator.ShotData;
 import frc.robot.utils.Utilites;
@@ -230,9 +231,9 @@ public class RobotContainer {
 
         new Trigger(Constants.controller::getReverseIntake).whileTrue(intakeSubsystem.setIntakeCommand(-0.9));
 
-        // Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
-        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode)
-                .whileTrue(driveSubsystem.controllerDriveRobotCentricFacingHubCommand());
+        new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode).whileTrue(faceHubCommand());
+        // new Trigger(Constants.controller::getDriveFieldCentricFacingHubMode)
+        //         .whileTrue(driveSubsystem.controllerDriveRobotCentricFacingHubCommand());
 
         new Trigger(Constants.controller::climbUp).whileTrue(climbSubsystem.setPowerCommand(0.5));
 
@@ -363,10 +364,8 @@ public class RobotContainer {
 
     public Command faceHubCommand() {
         return Commands.run(() -> {
-            double angle = Kinematics
-                    .getHubTransform2d(driveSubsystem
-                            .botToTurret(driveSubsystem.getFutureRobotPose2d()))
-                    .getRotation().getDegrees();
+                System.out.println("hello");
+            double angle = turretSubsystem.getHeading() + LimelightHelpers.getTX(Constants.TURRET_LIMELIGHT);
 
             // double distance = TurretCalculator
             // .getDistanceToTarget(driveSubsystem.getTurretPose(),

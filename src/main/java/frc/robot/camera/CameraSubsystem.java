@@ -54,6 +54,7 @@ public class CameraSubsystem extends SubsystemBase {
         this.rejectUpdate = true;
         this.doPoseEstimation = true;
         Shuffleboard.getTab("camera").addBoolean("megatag2", this::useMegaTag2);
+        LimelightHelpers.setPipelineIndex(Constants.TURRET_LIMELIGHT, 1);
         if (DriverStation.isTest())
             Shuffleboard.getTab("camera").addDouble("tx", () -> getHubTagThetaDiff());
         // turretLimelight = new HttpCamera("turret_limelight", "10.52.43.11:5800");
