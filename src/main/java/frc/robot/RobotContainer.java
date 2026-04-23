@@ -140,7 +140,8 @@ public class RobotContainer {
 
         // CameraServer.startAutomaticCapture(0);
 
-        configureBindings();
+        if (!Constants.nuthinButDrive)
+            configureBindings();
 
         autoChooser = AutoBuilder.buildAutoChooser();
 
@@ -328,8 +329,6 @@ public class RobotContainer {
                                 new WaitCommand(0.5).andThen(climbSubsystem.runToSetpointCommand(2.0)))
 
         );
-
-
 
         Command autoCommand3 = new SequentialCommandGroup(
                 // Reset pose

@@ -40,7 +40,7 @@ public class HopperSubsystem extends SubsystemBase {
 
     public void set(double speed) {
         double rollerSpeed = speed;
-        if (Constants.controller.getReverseRollers()) {
+        if (!Constants.nuthinButDrive && Constants.controller.getReverseRollers()) {
             rollerSpeed = -0.5;
         }
         roller.set(rollerSpeed);

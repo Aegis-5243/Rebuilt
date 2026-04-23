@@ -9,7 +9,6 @@ import static edu.wpi.first.units.Units.Inches;
 
 import java.util.Map;
 
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -39,6 +38,8 @@ import frc.robot.utils.Utilites.Config;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+    public static final boolean nuthinButDrive = false;
+
     public static final int FL_MOTOR = 13;
     public static final int FR_MOTOR = 14;
     public static final int BL_MOTOR = 11;
@@ -129,7 +130,7 @@ public final class Constants {
 
         SHOT_MAP.put(1.3, new ShotData(2500, 0));
         TOF_MAP.put(1.3, 1.05);
-        
+
         SHOT_MAP.put(2.0, new ShotData(3000, 0.12));
         TOF_MAP.put(2.0, 1.2);
 
@@ -160,8 +161,6 @@ public final class Constants {
     /** RPM to inches per second */
     public static final double CLIMB_VELOCITY_CONVERSION_FACTOR = CLIMB_POSISION_CONVERSION_FACTOR / 60.0;
     public static final int GYRO = 15;
-
-
 
     public static final double ROLLER_SPEED = 0.9;
     public static final double ROLLER_SPEED_REVERSE = -0.7;
