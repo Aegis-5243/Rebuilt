@@ -19,6 +19,7 @@ import com.revrobotics.spark.config.SoftLimitConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.I2C;
@@ -33,6 +34,8 @@ public class TurretSubsystem extends SubsystemBase {
     public ColorSensorV3 colorSensor;
     private WrappingDutyCycleEncoder temp;
     public DigitalInput limitSwitch;
+
+    public SlewRateLimiter rateLimiter;
 
     /** Creates a new ExampleSubsystem. */
     public TurretSubsystem() {
@@ -80,7 +83,7 @@ public class TurretSubsystem extends SubsystemBase {
         Shuffleboard.getTab("turret").add("Reset turret to right",
                 runOnce(() -> turretEncoder.setPosition(-90)).ignoringDisable(true));
 
-
+        rateLimiter = new SlewRateLimiter(1);
 
         // turretEncoder.setPosition(-90); // ASSUME RIGHTWARD TURRET ON POWER CYCLE
     }

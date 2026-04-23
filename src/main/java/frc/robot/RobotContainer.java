@@ -393,7 +393,7 @@ public class RobotContainer {
             angle = MathUtil.clamp(angle, Constants.TURRET_MIN_ANGLE.in(Degrees),
                     Constants.TURRET_MAX_ANGLE.in(Degrees));
 
-            turretSubsystem.setTarget(angle);
+            turretSubsystem.setTarget(turretSubsystem.rateLimiter.calculate(angle));
         }, turretSubsystem);
     }
 
