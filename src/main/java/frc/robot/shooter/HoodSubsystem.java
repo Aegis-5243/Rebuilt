@@ -29,7 +29,7 @@ public class HoodSubsystem extends SubsystemBase {
         primaryHoodServo = new Servo(8);
         secondaryHoodServo = new Servo(9);
         Shuffleboard.getTab("hood").add(primaryHoodServo);
-        hoodSetpoint = Shuffleboard.getTab("hood").add("hood-value-setter", 0).getEntry();
+        hoodSetpoint = Shuffleboard.getTab("hood").add("hood-value-setter", 1).getEntry();
         Shuffleboard.getTab("hood").addDouble("controlelr", ()->Constants.controller.getHoodDisplacement());
     }
 
