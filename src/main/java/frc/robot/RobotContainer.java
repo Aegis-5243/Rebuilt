@@ -111,7 +111,7 @@ public class RobotContainer {
         // 1)))
         // .withName("hoodDefault"));
         hoodSubsystem.setDefaultCommand(hoodSubsystem.run(() -> hoodSubsystem.setPos(MathUtil
-                .clamp(hoodSubsystem.hoodSetpoint.getDouble(0), 0,
+                .clamp(hoodSubsystem.hoodSetpoint.getDouble(1), 0,
                         1)))
                 .withName("hoodDefault"));
         turretSubsystem.setDefaultCommand(turretSubsystem.run(() -> {
@@ -221,7 +221,7 @@ public class RobotContainer {
         // }));
 
         new Trigger(() -> Constants.controller.getRawShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
-            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(3000)));
+            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(1500)));
 
         }, () -> shooterSubsystem.setDutyCycle(0)));
 
@@ -365,7 +365,7 @@ public class RobotContainer {
     public Command faceHubCommand() {
         return Commands.run(() -> {
                 System.out.println("hello");
-            double angle = turretSubsystem.getHeading() + LimelightHelpers.getTX(Constants.TURRET_LIMELIGHT);
+            double angle = turretSubsystem.getHeading() - LimelightHelpers.getTX(Constants.TURRET_LIMELIGHT);
 
             // double distance = TurretCalculator
             // .getDistanceToTarget(driveSubsystem.getTurretPose(),

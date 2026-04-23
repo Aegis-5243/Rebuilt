@@ -83,7 +83,7 @@ public class TurretSubsystem extends SubsystemBase {
         Shuffleboard.getTab("turret").add("Reset turret to right",
                 runOnce(() -> turretEncoder.setPosition(-90)).ignoringDisable(true));
 
-        rateLimiter = new SlewRateLimiter(1);
+        rateLimiter = new SlewRateLimiter(20);
 
         // turretEncoder.setPosition(-90); // ASSUME RIGHTWARD TURRET ON POWER CYCLE
     }

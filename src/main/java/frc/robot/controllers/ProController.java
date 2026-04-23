@@ -81,8 +81,9 @@ public class ProController implements DriveController {
 
     @Override
     public boolean getRawShoot() {
+        return controller.getRightTriggerAxis() > 0.6;// || controller.getBButton();
+
         // return controller.getAButton();
-        return controller.getAButton();
     }
 
     @Override
@@ -120,8 +121,8 @@ public class ProController implements DriveController {
 
     @Override
     public boolean allShoot() {
-        return controller.getRightTriggerAxis() > 0.6;// || controller.getBButton();
-
+        
+        return controller.getAButton();
     }
 
     @Override
