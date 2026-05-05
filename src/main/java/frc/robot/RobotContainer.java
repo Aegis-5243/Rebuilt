@@ -221,7 +221,7 @@ public class RobotContainer {
         // }));
 
         new Trigger(() -> Constants.controller.getRawShoot()).whileTrue(shooterSubsystem.runEnd(() -> {
-            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(1500)));
+            shooterSubsystem.setVelocity(Units.RPM.of(shooterSubsystem.targetRPM.getDouble(1125)));
 
         }, () -> shooterSubsystem.setDutyCycle(0)));
 

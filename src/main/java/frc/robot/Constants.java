@@ -163,7 +163,7 @@ public final class Constants {
 
 
 
-    public static final double ROLLER_SPEED = 0.9;
+    public static final double ROLLER_SPEED = 0.25;
     public static final double ROLLER_SPEED_REVERSE = -0.7;
 
     public static DriveController controller = new ProController(0);
