@@ -39,6 +39,9 @@ import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.util.datalog.DataLog;
+import edu.wpi.first.util.datalog.DoubleLogEntry;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Encoder;
@@ -101,6 +104,11 @@ public class DriveSubsystem extends SubsystemBase {
 
     public GenericEntry volts;
     private TurretSubsystem turretSubsystem;
+
+    private DoubleLogEntry vx;
+    private DoubleLogEntry vy;
+    private DoubleLogEntry ax;
+    private DoubleLogEntry ay;
 
     boolean isUsingFlickStick = false;
 
@@ -238,6 +246,13 @@ public class DriveSubsystem extends SubsystemBase {
                             .linearVelocity(Units.MetersPerSecond.of(-brEncoder.getRate()));
                 },
                 this));
+
+        DataLogManager.start();
+        DataLog log = DataLogManager.getLog();
+        vx = new DoubleLogEntry(log, "drive/velocityX");
+        vy = new DoubleLogEntry(log, "drive/velocityY");
+        ax = new DoubleLogEntry(log, "drive/accelerationX");
+        ay = new DoubleLogEntry(log, "drive/accelerationY");
 
         // if (DriverStation.isTest()) {
         tab.addDouble("gyroYaw", () -> gyro.getAngle());
@@ -697,6 +712,8 @@ public class DriveSubsystem extends SubsystemBase {
         // This method will be called once per scheduler run
         updatePose();
         updateVelocity();
+
+        log();
     }
 
     @Override
@@ -940,5 +957,14 @@ public class DriveSubsystem extends SubsystemBase {
             // End game, hub always active.
             return matchTime;
         }
+    }
+
+    public void log() {
+        ChassisSpeeds vel = getVelocity();
+        vx.append(vel.vxMetersPerSecond);
+        vy.append(vel.vyMetersPerSecond);
+
+        ax.append(Units.Gs.of(gyro.getWorldLinearAccelX()).in(Units.MetersPerSecondPerSecond));
+        ay.append(Units.Gs.of(gyro.getWorldLinearAccelY()).in(Units.MetersPerSecondPerSecond));
     }
 }
